@@ -1,34 +1,59 @@
-# DrivePulse Web V5.3
+# DrivePulse Web V6
 
-## La vitesse devient prioritaire
-La vitesse GPS est maintenant la composante principale de l’énergie musicale.
+## Structure musicale adaptative
 
-Même en ligne droite, sans accélération ni virage :
-- la basse devient plus active avec la vitesse ;
-- la batterie gagne en densité ;
-- les charlestons apparaissent progressivement ;
-- les arpèges se renforcent ;
-- un motif mélodique monte dans le registre.
+La V6 ajoute un véritable directeur musical au moteur génératif.
 
-## Profils de route
-### Ville
-- vitesse de référence : 50 km/h ;
-- progression musicale rapide dès les basses vitesses ;
-- adaptée aux trajets urbains.
+### Sections disponibles
+- Intro
+- Groove
+- Montée
+- Refrain
+- Respiration
+- Reprise
 
-### Campagne
-- vitesse de référence : 80 km/h ;
-- progression plus étalée ;
-- adaptée aux routes départementales et nationales.
+Les changements de section sont appliqués uniquement en début de mesure afin de conserver une cohérence musicale.
 
-### Autoroute
-- vitesse de référence : 130 km/h ;
-- progression musicale conçue pour rester évolutive jusqu’à haute vitesse.
+## Mémoire de conduite
 
-Le profil sélectionné est mémorisé dans le navigateur.
+### Mémoire courte
+Réagit sur quelques secondes aux variations immédiates :
+- vitesse ;
+- accélération ;
+- freinage ;
+- virages.
 
-## Mise à jour GitHub
-Remplace les fichiers de la V5.2 par ceux de cette archive.
+### Mémoire longue
+Évolue plus lentement et représente le climat global du trajet.
+
+Une accélération courte peut déclencher une montée, mais un refrain demande une énergie ou une vitesse élevée maintenue.
+
+## Effets des sections
+
+- Intro : piano et nappes, rythme léger.
+- Groove : basse et batterie régulières.
+- Montée : densification du rythme et de la mélodie.
+- Refrain : instrumentation maximale.
+- Respiration : filtre fermé et rythme réduit.
+- Reprise : retour progressif de la batterie.
+
+## Scénario de test
+
+Le bouton `Scénario trajet complet` simule :
+1. arrêt ;
+2. accélération en ville ;
+3. vitesse urbaine constante ;
+4. passage en campagne ;
+5. route sinueuse ;
+6. accélération autoroutière ;
+7. vitesse élevée constante ;
+8. freinage ;
+9. retour à l'arrêt.
+
+## Déploiement GitHub
+
+Remplace les fichiers de la V5.3 par ceux de cette archive sur `main`.
 
 Commit conseillé :
-`DrivePulse V5.3 - speed based road profiles`
+
+`DrivePulse V6 - adaptive song structure and driving memory`

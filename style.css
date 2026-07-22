@@ -39,3 +39,5 @@ meter,input[type=range]{width:100%}
 .road-mode{min-height:46px;padding:8px;font-size:.88rem;background:rgba(255,255,255,.07)}
 .road-mode.active{background:#f8fafc;color:#080b14}
 .mode-help{margin:12px 0 0;opacity:.7;font-size:.88rem;line-height:1.4}
+
+#journeyBtn{margin-top:10px;width:100%}

@@ -7,7 +7,8 @@ const ui={
  mode:$("modeLabel"),bar:$("barLabel"),energy:$("energyLabel"),chord:$("chordState"),bass:$("bassState"),
  drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),idlePiano:$("idlePianoToggle"),
  road:$("roadState"),speedMusic:$("speedMusicState"),roadHelp:$("roadModeHelp"),
- responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
+ section:$("sectionState"),shortMemory:$("shortMemoryState"),longMemory:$("longMemoryState"),
+ journey:$("journeyBtn"),responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
 };
 
 const BPM=118,BEAT=60/BPM,BAR=BEAT*4,LOOP_BARS=8;
@@ -18,10 +19,13 @@ const progression=[
  {name:"G",root:55,notes:[55,59,62]}
 ];
 
-let running=false,watchId=null,demoTimer=null,schedulerTimer=null;
+let running=false,watchId=null,demoTimer=null,journeyTimer=null,schedulerTimer=null;
 let speedKmh=0,demoPhase=0,calibrationActive=false,calibrationSamples=[];
 let forward={x:0,y:1},smoothed={accel:0,brake:0,turn:0};
 let audio=null,nextStepTime=0,stepIndex=0,currentMode="cruise",barCounter=0,variation=0;
+const SongSection={INTRO:"intro",GROOVE:"groove",BUILD:"build",CHORUS:"chorus",BREAKDOWN:"breakdown",REPRISE:"reprise"};
+let songSection=SongSection.INTRO,targetSection=SongSection.INTRO,sectionBars=0;
+let shortMemory=0,longMemory=0,stableSpeedMemory=0,lastSpeedSample=0,lastMemoryUpdate=performance.now();
 let roadMode=localStorage.getItem("drivepulse-road-mode")||"city";
 const ROAD_PROFILES={
  city:{label:"Ville",maxSpeed:50,driveAt:.28,boostAt:.78,help:"Échelle musicale optimisée jusqu’à environ 50 km/h."},
@@ -179,12 +183,104 @@ function computeEnergy(a,b,t){
  // la musique gagne en densité, en registre et en pulsation.
  return clamp(.22+s*.62+a*.18+t*.10-b*.18);
 }
+
+function updateDrivingMemory(){
+ const now=performance.now();
+ const dt=Math.min(1,(now-lastMemoryUpdate)/1000);
+ lastMemoryUpdate=now;
+
+ const s=speedIntensity();
+ const immediate=clamp(
+   s*.58+
+   smoothed.accel*.24+
+   smoothed.turn*.12-
+   smoothed.brake*.18
+ );
+
+ shortMemory=lowPass(shortMemory,immediate,Math.min(.45,dt*.32));
+ longMemory=lowPass(longMemory,shortMemory,Math.min(.10,dt*.035));
+
+ const speedDelta=Math.abs(speedKmh-lastSpeedSample);
+ const stableTarget=speedKmh>8 && speedDelta<2.5 && smoothed.accel<.18 && smoothed.brake<.18 ? 1 : 0;
+ stableSpeedMemory=lowPass(stableSpeedMemory,stableTarget,Math.min(.25,dt*.10));
+ lastSpeedSample=speedKmh;
+}
+
+function evaluateSongSection(){
+ const s=speedIntensity();
+
+ if(smoothed.brake>.56) return SongSection.BREAKDOWN;
+ if(songSection===SongSection.BREAKDOWN && speedKmh>10 && smoothed.brake<.2) return SongSection.REPRISE;
+ if(smoothed.accel>.48 || (shortMemory>.70 && longMemory<.62)) return SongSection.BUILD;
+ if((s>.70 && stableSpeedMemory>.45) || longMemory>.73) return SongSection.CHORUS;
+ if(speedKmh>8 || s>.15) return SongSection.GROOVE;
+ return SongSection.INTRO;
+}
+
+function sectionLabel(section){
+ return {
+   intro:"Intro",
+   groove:"Groove",
+   build:"Montée",
+   chorus:"Refrain",
+   breakdown:"Respiration",
+   reprise:"Reprise"
+ }[section];
+}
+
+function applySectionTransition(){
+ targetSection=evaluateSongSection();
+
+ const minBars={
+   intro:2,
+   groove:4,
+   build:2,
+   chorus:4,
+   breakdown:2,
+   reprise:2
+ }[songSection];
+
+ if(targetSection!==songSection && sectionBars>=minBars){
+   songSection=targetSection;
+   sectionBars=0;
+   playTransitionAccent(audio.ctx.currentTime+.02,songSection);
+ }else{
+   sectionBars++;
+ }
+}
+
+function playTransitionAccent(start,section){
+ if(section===SongSection.BUILD || section===SongSection.CHORUS){
+   playKick(start,.9);
+   playTone(110,start,.42,"sawtooth",.05);
+   playTone(220,start+.08,.32,"triangle",.035);
+ }else if(section===SongSection.BREAKDOWN){
+   playTone(146.83,start,.8,"sine",.055);
+ }else if(section===SongSection.REPRISE){
+   playKick(start,.7);
+   playSnare(start+.12,.25);
+ }
+}
+
+function sectionMultipliers(){
+ return {
+   intro:{rhythm:.45,melody:.70,filter:.72},
+   groove:{rhythm:.82,melody:.82,filter:.88},
+   build:{rhythm:1.05,melody:1.05,filter:1.0},
+   chorus:{rhythm:1.22,melody:1.18,filter:1.0},
+   breakdown:{rhythm:.24,melody:.62,filter:.42},
+   reprise:{rhythm:.92,melody:.92,filter:.82}
+ }[songSection];
+}
+
 function scheduleStep(time){
  const a=smoothed.accel,b=smoothed.brake,t=smoothed.turn;
  currentMode=modeFromDriving(a,b,t);
+ updateDrivingMemory();
  const speedDrive=speedIntensity();
  const energy=computeEnergy(a,b,t);
  const density=Number(ui.density.value);
+ const sectionMix=sectionMultipliers();
  const barIndex=Math.floor(stepIndex/8)%LOOP_BARS;
  const stepInBar=stepIndex%8;
  const chord=progression[Math.floor(barIndex/2)%progression.length];
@@ -192,7 +288,8 @@ function scheduleStep(time){
  playIdleBed(chord,time,stepInBar,barIndex);
 
  if(stepInBar===0){
-   playPad(chord.notes,time,BAR*.92,Math.max(.35,energy));
+   applySectionTransition();
+   playPad(chord.notes,time,BAR*.92,Math.max(.35,energy)*sectionMix.melody);
    barCounter=barIndex;
    variation=(barIndex+Math.floor(energy*3))%2;
  }
@@ -205,18 +302,22 @@ function scheduleStep(time){
  if(bassPattern.includes(stepInBar)){
    const octaveJump=boost&&stepInBar===7?12:0;
    playBass(chord.root+octaveJump,time,boost);
+   if(sectionMix.rhythm>1.05 && stepInBar%2===0){
+     playTone(midiToHz(chord.root-12),time,.14,"triangle",.028*sectionMix.rhythm);
+   }
  }
 
  if(currentMode!=="brake"){
    const kickLevel=.42+speedDrive*.38+(boost?.10:0);
-   if(stepInBar===0||stepInBar===4||(speedDrive>.82&&stepInBar===6))playKick(time,kickLevel);
-   if((speedDrive>.24||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,.18+speedDrive*.18);
+   if(stepInBar===0||stepInBar===4||(speedDrive>.82&&stepInBar===6))playKick(time,kickLevel*sectionMix.rhythm);
+   if((speedDrive>.24||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,(.18+speedDrive*.18)*sectionMix.rhythm);
    if(speedDrive>.18||currentMode==="drive"||currentMode==="boost"){
-     if(stepInBar%2===0||speedDrive>.66||density>1.1)playHat(time,.04+speedDrive*.055);
+     if(stepInBar%2===0||speedDrive>.66||density>1.1)playHat(time,(.04+speedDrive*.055)*sectionMix.rhythm);
    }
  }
 
- const arpEnabled=speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&density>1);
+ const arpEnabled=songSection!==SongSection.BREAKDOWN &&
+   (speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&density>1));
  if(arpEnabled){
    const arpOrder=variation===0?[0,1,2,1,0,1,2,1]:[2,1,0,1,2,1,0,1];
    const note=chord.notes[arpOrder[stepInBar]]+12;
@@ -236,7 +337,7 @@ function scheduleStep(time){
    audio.filter.frequency.setTargetAtTime(850+b*900,now,.06);
    audio.master.gain.setTargetAtTime(.42,now,.06);
  }else{
-   audio.filter.frequency.setTargetAtTime(5500+energy*11000,now,.12);
+   audio.filter.frequency.setTargetAtTime((4200+energy*11800)*sectionMix.filter,now,.12);
    audio.master.gain.setTargetAtTime(speedKmh<8?.72:.62,now,.12);
  }
 
@@ -262,6 +363,9 @@ function updateUi(chord,energy,barIndex,speedDrive){
  ui.idle.textContent=ui.idlePiano.checked&&speedKmh<8?"Solo piano":"Fond synthétique";
  ui.road.textContent=ROAD_PROFILES[roadMode].label;
  ui.speedMusic.textContent=`${Math.round(speedDrive*100)}%`;
+ ui.section.textContent=sectionLabel(songSection);
+ ui.shortMemory.textContent=`${Math.round(shortMemory*100)}%`;
+ ui.longMemory.textContent=`${Math.round(longMemory*100)}%`;
  ui.music.value=energy;ui.musicValue.value=energy.toFixed(2);
 }
 function startGps(){
@@ -318,6 +422,67 @@ function startDemo(){
    renderMotion();
  },100);
 }
+
+function startJourneyScenario(){
+ if(journeyTimer){
+   clearInterval(journeyTimer);
+   journeyTimer=null;
+   ui.journey.textContent="Scénario trajet complet";
+   setStatus("Scénario arrêté");
+   return;
+ }
+ if(demoTimer){clearInterval(demoTimer);demoTimer=null;}
+ let elapsed=0;
+ ui.journey.textContent="Arrêter le scénario";
+ setStatus("Scénario : arrêt → ville → campagne → autoroute → freinage");
+
+ journeyTimer=setInterval(()=>{
+   elapsed+=.1;
+   let targetSpeed=0,a=0,b=0,t=0;
+
+   if(elapsed<8){
+     targetSpeed=0;
+   }else if(elapsed<25){
+     targetSpeed=(elapsed-8)/17*50;
+     a=.48;
+     roadMode="city";
+   }else if(elapsed<42){
+     targetSpeed=48;
+     t=.12;
+   }else if(elapsed<58){
+     targetSpeed=50+(elapsed-42)/16*30;
+     a=.38;
+     roadMode="country";
+   }else if(elapsed<78){
+     targetSpeed=80;
+     t=.26;
+   }else if(elapsed<98){
+     targetSpeed=80+(elapsed-78)/20*50;
+     a=.42;
+     roadMode="highway";
+   }else if(elapsed<120){
+     targetSpeed=130;
+   }else if(elapsed<130){
+     targetSpeed=130-(elapsed-120)/10*110;
+     b=.72;
+   }else{
+     targetSpeed=0;
+     clearInterval(journeyTimer);
+     journeyTimer=null;
+     ui.journey.textContent="Scénario trajet complet";
+     setStatus("Scénario terminé");
+   }
+
+   applyRoadMode(roadMode);
+   speedKmh=Math.max(0,targetSpeed);
+   smoothed.accel=lowPass(smoothed.accel,a,.22);
+   smoothed.brake=lowPass(smoothed.brake,b,.22);
+   smoothed.turn=lowPass(smoothed.turn,t,.22);
+   ui.speed.textContent=Math.round(speedKmh);
+   renderMotion();
+ },100);
+}
+
 async function start(){
  try{
   setStatus("Initialisation du moteur génératif…");
@@ -328,18 +493,19 @@ async function start(){
   window.addEventListener("devicemotion",handleMotion,{passive:true});
   startGps();
   const saved=localStorage.getItem("drivepulse-forward");if(saved)forward=JSON.parse(saved);
-  ui.start.disabled=true;ui.calibrate.disabled=false;ui.stop.disabled=false;ui.demo.disabled=false;
+  ui.start.disabled=true;ui.calibrate.disabled=false;ui.stop.disabled=false;ui.demo.disabled=false;ui.journey.disabled=false;
   setStatus(saved?"Actif avec calibration enregistrée":"Actif : calibre l’axe avant");
  }catch(err){setStatus(err.message||"Impossible de démarrer.");}
 }
 function stop(){
  running=false;calibrationActive=false;
  if(demoTimer)clearInterval(demoTimer);demoTimer=null;
+ if(journeyTimer)clearInterval(journeyTimer);journeyTimer=null;
  if(schedulerTimer)clearInterval(schedulerTimer);schedulerTimer=null;
  window.removeEventListener("devicemotion",handleMotion);
  if(watchId!=null)navigator.geolocation.clearWatch(watchId);
  if(audio)audio.ctx.close();audio=null;
- ui.start.disabled=false;ui.calibrate.disabled=true;ui.stop.disabled=true;ui.demo.disabled=true;
+ ui.start.disabled=false;ui.calibrate.disabled=true;ui.stop.disabled=true;ui.demo.disabled=true;ui.journey.disabled=true;
  setStatus("Arrêté");
 }
 
@@ -362,6 +528,7 @@ ui.start.addEventListener("click",start);
 ui.calibrate.addEventListener("click",beginCalibration);
 ui.stop.addEventListener("click",stop);
 ui.demo.addEventListener("click",startDemo);
+ui.journey.addEventListener("click",startJourneyScenario);
 if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
 
 ui.idlePiano.checked=localStorage.getItem("drivepulse-idle-piano")!=="off";
