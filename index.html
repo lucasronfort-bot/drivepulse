@@ -11,7 +11,7 @@
 <body>
 <main class="app">
 <header>
-<p class="eyebrow">Toyota C-HR · Prototype V5.2</p>
+<p class="eyebrow">Toyota C-HR · Prototype V5.3</p>
 <h1>DrivePulse</h1>
 <p id="status" class="status">Prêt</p>
 </header>
@@ -50,12 +50,24 @@
 <div><span>Filtre</span><strong id="filterState">Ouvert</strong></div>
 <div><span>Variation</span><strong id="variationState">A</strong></div>
 <div><span>Fond permanent</span><strong id="idleState">Piano électrique</strong></div>
+<div><span>Profil route</span><strong id="roadState">Ville</strong></div>
+<div><span>Vitesse musicale</span><strong id="speedMusicState">0%</strong></div>
 </div>
 <label class="toggle-row">
   <span>Piano à l’arrêt</span>
   <input id="idlePianoToggle" type="checkbox" checked>
 </label>
 <button id="demoBtn" disabled>Mode démonstration</button>
+</section>
+
+<section class="panel">
+<h2>Profil de route</h2>
+<div class="road-modes" role="group" aria-label="Profil de route">
+  <button class="road-mode active" data-road-mode="city">Ville · 50</button>
+  <button class="road-mode" data-road-mode="country">Campagne · 80</button>
+  <button class="road-mode" data-road-mode="highway">Autoroute · 130</button>
+</div>
+<p class="mode-help" id="roadModeHelp">Échelle musicale optimisée jusqu’à environ 50 km/h.</p>
 </section>
 
 <section class="panel">

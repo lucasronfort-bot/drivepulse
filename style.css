@@ -34,3 +34,8 @@ meter,input[type=range]{width:100%}
 
 .toggle-row{display:flex!important;align-items:center;justify-content:space-between;margin:0 0 14px!important;padding:14px;background:rgba(255,255,255,.05);border-radius:14px}
 .toggle-row input{width:24px;height:24px}
+
+.road-modes{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.road-mode{min-height:46px;padding:8px;font-size:.88rem;background:rgba(255,255,255,.07)}
+.road-mode.active{background:#f8fafc;color:#080b14}
+.mode-help{margin:12px 0 0;opacity:.7;font-size:.88rem;line-height:1.4}

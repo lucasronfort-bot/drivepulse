@@ -6,6 +6,7 @@ const ui={
  accelValue:$("accelValue"),brakeValue:$("brakeValue"),turnValue:$("turnValue"),musicValue:$("musicValue"),
  mode:$("modeLabel"),bar:$("barLabel"),energy:$("energyLabel"),chord:$("chordState"),bass:$("bassState"),
  drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),idlePiano:$("idlePianoToggle"),
+ road:$("roadState"),speedMusic:$("speedMusicState"),roadHelp:$("roadModeHelp"),
  responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
 };
 
@@ -21,6 +22,12 @@ let running=false,watchId=null,demoTimer=null,schedulerTimer=null;
 let speedKmh=0,demoPhase=0,calibrationActive=false,calibrationSamples=[];
 let forward={x:0,y:1},smoothed={accel:0,brake:0,turn:0};
 let audio=null,nextStepTime=0,stepIndex=0,currentMode="cruise",barCounter=0,variation=0;
+let roadMode=localStorage.getItem("drivepulse-road-mode")||"city";
+const ROAD_PROFILES={
+ city:{label:"Ville",maxSpeed:50,driveAt:.28,boostAt:.78,help:"Échelle musicale optimisée jusqu’à environ 50 km/h."},
+ country:{label:"Campagne",maxSpeed:80,driveAt:.32,boostAt:.82,help:"Échelle musicale optimisée jusqu’à environ 80 km/h."},
+ highway:{label:"Autoroute",maxSpeed:130,driveAt:.36,boostAt:.86,help:"Échelle musicale optimisée jusqu’à environ 130 km/h."}
+};
 
 const clamp=(v,min=0,max=1)=>Math.max(min,Math.min(max,v));
 const lowPass=(oldV,newV,a=.12)=>oldV+a*(newV-oldV);
@@ -152,20 +159,30 @@ function playHat(start,amount=.06){
  g.gain.setValueAtTime(amount,start);g.gain.exponentialRampToValueAtTime(.001,start+.035);
  s.connect(f).connect(g).connect(audio.master);s.start(start);s.stop(start+.04);
 }
+function speedIntensity(){
+ const profile=ROAD_PROFILES[roadMode];
+ return clamp(speedKmh/profile.maxSpeed);
+}
 function modeFromDriving(a,b,t){
  const r=Number(ui.responsiveness.value);
+ const s=speedIntensity();
+ const profile=ROAD_PROFILES[roadMode];
  if(b>.5)return"brake";
- if(a*r>.72)return"boost";
+ if(a*r>.72 || s>profile.boostAt)return"boost";
  if(t*r>.62)return"curve";
- if(speedKmh>55||a*r>.25)return"drive";
+ if(s>profile.driveAt || a*r>.25)return"drive";
  return"cruise";
 }
 function computeEnergy(a,b,t){
- return clamp(.22+clamp(speedKmh/110)*.35+a*.48+t*.18-b*.20);
+ const s=speedIntensity();
+ // La vitesse devient la composante dominante : même à allure constante,
+ // la musique gagne en densité, en registre et en pulsation.
+ return clamp(.22+s*.62+a*.18+t*.10-b*.18);
 }
 function scheduleStep(time){
  const a=smoothed.accel,b=smoothed.brake,t=smoothed.turn;
  currentMode=modeFromDriving(a,b,t);
+ const speedDrive=speedIntensity();
  const energy=computeEnergy(a,b,t);
  const density=Number(ui.density.value);
  const barIndex=Math.floor(stepIndex/8)%LOOP_BARS;
@@ -181,25 +198,37 @@ function scheduleStep(time){
  }
 
  const boost=currentMode==="boost";
- const bassPattern=boost?[0,1,2,3,4,5,6,7]:currentMode==="drive"?[0,2,4,6]:[0,4];
+ const bassPattern=boost?[0,1,2,3,4,5,6,7]:
+   speedDrive>.55?[0,1,2,4,5,6]:
+   currentMode==="drive"?[0,2,4,6]:
+   speedDrive>.18?[0,2,4,6]:[0,4];
  if(bassPattern.includes(stepInBar)){
    const octaveJump=boost&&stepInBar===7?12:0;
    playBass(chord.root+octaveJump,time,boost);
  }
 
  if(currentMode!=="brake"){
-   if(stepInBar===0||stepInBar===4)playKick(time,currentMode==="boost"?.85:currentMode==="drive"?.68:.42);
-   if((currentMode==="drive"||currentMode==="boost"||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,currentMode==="boost"?.32:.22);
-   if(currentMode==="boost"||currentMode==="drive"){
-     if(stepInBar%2===0||density>1.1)playHat(time,currentMode==="boost"?.08:.055);
+   const kickLevel=.42+speedDrive*.38+(boost?.10:0);
+   if(stepInBar===0||stepInBar===4||(speedDrive>.82&&stepInBar===6))playKick(time,kickLevel);
+   if((speedDrive>.24||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,.18+speedDrive*.18);
+   if(speedDrive>.18||currentMode==="drive"||currentMode==="boost"){
+     if(stepInBar%2===0||speedDrive>.66||density>1.1)playHat(time,.04+speedDrive*.055);
    }
  }
 
- const arpEnabled=currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&density>1);
+ const arpEnabled=speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&density>1);
  if(arpEnabled){
    const arpOrder=variation===0?[0,1,2,1,0,1,2,1]:[2,1,0,1,2,1,0,1];
    const note=chord.notes[arpOrder[stepInBar]]+12;
    playTone(midiToHz(note),time,.12,currentMode==="boost"?"square":"triangle",currentMode==="boost"?.055:.04);
+ }
+
+ // Motif de vitesse : reste actif à vitesse constante et monte dans le registre.
+ if(speedDrive>.20 && stepInBar%2===1){
+   const speedPattern=variation===0?[0,1,2,1]:[2,1,0,1];
+   const idx=speedPattern[Math.floor(stepInBar/2)%4];
+   const octave=speedDrive>.72?24:12;
+   playTone(midiToHz(chord.notes[idx]+octave),time,.18,"triangle",.018+speedDrive*.035);
  }
 
  const now=audio.ctx.currentTime;
@@ -211,7 +240,7 @@ function scheduleStep(time){
    audio.master.gain.setTargetAtTime(speedKmh<8?.72:.62,now,.12);
  }
 
- updateUi(chord,energy,barIndex);
+ updateUi(chord,energy,barIndex,speedDrive);
  stepIndex++;
 }
 function scheduler(){
@@ -220,7 +249,7 @@ function scheduler(){
    nextStepTime+=BEAT/2;
  }
 }
-function updateUi(chord,energy,barIndex){
+function updateUi(chord,energy,barIndex,speedDrive){
  ui.mode.textContent={cruise:"Cruise",drive:"Drive",boost:"Boost",curve:"Curve",brake:"Brake"}[currentMode];
  ui.bar.textContent=`${barIndex+1} / ${LOOP_BARS}`;
  ui.energy.textContent=`${Math.round(energy*100)}%`;
@@ -231,6 +260,8 @@ function updateUi(chord,energy,barIndex){
  ui.filter.textContent=currentMode==="brake"?"Fermé":"Ouvert";
  ui.variation.textContent=variation===0?"A":"B";
  ui.idle.textContent=ui.idlePiano.checked&&speedKmh<8?"Solo piano":"Fond synthétique";
+ ui.road.textContent=ROAD_PROFILES[roadMode].label;
+ ui.speedMusic.textContent=`${Math.round(speedDrive*100)}%`;
  ui.music.value=energy;ui.musicValue.value=energy.toFixed(2);
 }
 function startGps(){
@@ -311,6 +342,22 @@ function stop(){
  ui.start.disabled=false;ui.calibrate.disabled=true;ui.stop.disabled=true;ui.demo.disabled=true;
  setStatus("Arrêté");
 }
+
+function applyRoadMode(mode){
+ if(!ROAD_PROFILES[mode])return;
+ roadMode=mode;
+ localStorage.setItem("drivepulse-road-mode",mode);
+ document.querySelectorAll(".road-mode").forEach(btn=>{
+   btn.classList.toggle("active",btn.dataset.roadMode===mode);
+ });
+ ui.roadHelp.textContent=ROAD_PROFILES[mode].help;
+ ui.road.textContent=ROAD_PROFILES[mode].label;
+}
+document.querySelectorAll(".road-mode").forEach(btn=>{
+ btn.addEventListener("click",()=>applyRoadMode(btn.dataset.roadMode));
+});
+applyRoadMode(roadMode);
+
 ui.start.addEventListener("click",start);
 ui.calibrate.addEventListener("click",beginCalibration);
 ui.stop.addEventListener("click",stop);
