@@ -211,14 +211,14 @@ const MUSIC_AGENTS=[
  {id:"hook",emoji:"🎤",name:"HOOK",role:"Mélodie principale",description:"Thème actuel",color:"#dc65d9"},
  {id:"reply",emoji:"🔔",name:"REPLY",role:"Contrechant",description:"Réponses & variations",color:"#ff9a2f"},
  {id:"motion",emoji:"🪘",name:"MOTION",role:"Percussions",description:"Mouvement organique",color:"#ffad31"},
- {id:"voice",emoji:"🎙️",name:"VOICE",role:"Voix synthétique",description:"Textures vocales",color:"#37d6d3"},
+ {id:"voice",emoji:"🎙️",name:"VOICE",role:"Chœurs & vocal chops",description:"Voyelles synthétiques originales",color:"#37d6d3"},
  {id:"rise",emoji:"🌊",name:"RISE",role:"FX & impacts",description:"Transitions",color:"#a853f2"}
 ];
 
 const activeAgents=new Set();
 const agentVisualState=new Map();
-let hookPatternIndex=0,replyPatternIndex=0,bassPatternIndex=0,phraseCycle=0;
-let lastHookPattern=-1,lastReplyPattern=-1,lastBassPattern=-1;
+let hookPatternIndex=0,replyPatternIndex=0,bassPatternIndex=0,voicePhraseIndex=0,phraseCycle=0;
+let lastHookPattern=-1,lastReplyPattern=-1,lastBassPattern=-1,lastVoicePhrase=-1;
 
 const HOOK_PATTERNS=[
  [0,null,2,4,null,2,1,2],
@@ -267,7 +267,11 @@ function renderAgents(){
     <div class="agent-meter" aria-hidden="true">
       ${Array.from({length:14},(_,i)=>`<i style="animation-delay:-${((i*0.09)+(index*0.03)).toFixed(2)}s"></i>`).join("")}
     </div>
+    ${agent.id==="voice"?'<button class="agent-preview" type="button" data-preview-voice>Tester</button>':""}
   </article>`).join("");
+
+ const previewButton=ui.agentGrid.querySelector("[data-preview-voice]");
+ if(previewButton)previewButton.addEventListener("click",previewVoiceAgent);
 }
 
 function setAgentVisualState(id,state){
@@ -312,7 +316,11 @@ function chooseAgentSet(energy){
  if(energy>.46||songSection===SongSection.BUILD||songSection===SongSection.CHORUS)next.add("hook");
  if(energy>.58&&songSection!==SongSection.BREAKDOWN)next.add("reply");
  if(smoothed.turn>.22||roadMode==="country")next.add("motion");
- if(songSection===SongSection.CHORUS&&sectionBars>=1)next.add("voice");
+ if(
+  (songSection===SongSection.CHORUS)||
+  (songSection===SongSection.BUILD&&energy>.58)||
+  (songSection===SongSection.REPRISE&&energy>.48)
+ )next.add("voice");
  if([SongSection.BUILD,SongSection.BREAKDOWN,SongSection.REPRISE].includes(songSection))next.add("rise");
 
  syncAgentSet(next);
@@ -367,13 +375,255 @@ function playMotionAgent(time,stepInBar,energy){
  if(stepInBar===3||stepInBar===7)playTone(165+(stepInBar*7),time,.075,"square",.007+.007*energy);
 }
 
+const VOWEL_FORMANTS={
+ ah:[
+  {frequency:800,q:7.5,gain:1.00},
+  {frequency:1150,q:9.0,gain:.62},
+  {frequency:2900,q:12.0,gain:.22}
+ ],
+ oh:[
+  {frequency:500,q:9.5,gain:1.00},
+  {frequency:900,q:10.0,gain:.58},
+  {frequency:2450,q:13.0,gain:.20}
+ ],
+ eh:[
+  {frequency:530,q:9.0,gain:1.00},
+  {frequency:1850,q:11.0,gain:.52},
+  {frequency:2500,q:13.0,gain:.23}
+ ],
+ ee:[
+  {frequency:300,q:11.0,gain:1.00},
+  {frequency:2300,q:13.5,gain:.48},
+  {frequency:3000,q:15.0,gain:.18}
+ ],
+ oo:[
+  {frequency:350,q:11.0,gain:1.00},
+  {frequency:700,q:12.0,gain:.55},
+  {frequency:2400,q:14.0,gain:.16}
+ ]
+};
+
+const VOICE_PHRASES=[
+ {
+  label:"Oh · ah",
+  events:[
+   {step:0,vowel:"oh",degree:4,duration:.40},
+   {step:2,vowel:"ah",degree:7,duration:.32},
+   {step:4,vowel:"oh",degree:4,duration:.38},
+   {step:6,vowel:"ah",degree:2,duration:.34}
+  ]
+ },
+ {
+  label:"Eh · oh",
+  events:[
+   {step:1,vowel:"eh",degree:7,duration:.28},
+   {step:3,vowel:"oh",degree:4,duration:.34},
+   {step:5,vowel:"eh",degree:2,duration:.27},
+   {step:7,vowel:"oh",degree:0,duration:.36}
+  ]
+ },
+ {
+  label:"Ah · ee · oh",
+  events:[
+   {step:0,vowel:"ah",degree:0,duration:.40},
+   {step:3,vowel:"ee",degree:4,duration:.26},
+   {step:5,vowel:"oh",degree:7,duration:.37}
+  ]
+ },
+ {
+  label:"Hey · oh",
+  events:[
+   {step:0,vowel:"eh",degree:4,duration:.25,consonant:true},
+   {step:2,vowel:"oh",degree:7,duration:.34},
+   {step:5,vowel:"eh",degree:4,duration:.24,consonant:true},
+   {step:6,vowel:"oh",degree:2,duration:.34}
+  ]
+ },
+ {
+  label:"Oo · ah",
+  events:[
+   {step:0,vowel:"oo",degree:0,duration:.50},
+   {step:4,vowel:"ah",degree:7,duration:.46}
+  ]
+ }
+];
+
+function playBreathyAttack(start,duration=.055,amount=.022){
+ const ctx=audio.ctx;
+ const source=ctx.createBufferSource();
+ const filter=ctx.createBiquadFilter();
+ const gain=ctx.createGain();
+
+ source.buffer=noiseBuffer();
+ filter.type="bandpass";
+ filter.frequency.setValueAtTime(2600,start);
+ filter.Q.setValueAtTime(1.2,start);
+
+ gain.gain.setValueAtTime(.0001,start);
+ gain.gain.linearRampToValueAtTime(amount,start+.008);
+ gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+
+ source.connect(filter).connect(gain).connect(audio.master);
+ source.start(start);
+ source.stop(start+duration+.02);
+}
+
+function playVowelVoice(midi,start,duration,vowel="ah",amount=.055,options={}){
+ const ctx=audio.ctx;
+ const baseFrequency=midiToHz(midi);
+ const formants=VOWEL_FORMANTS[vowel]||VOWEL_FORMANTS.ah;
+
+ const voiceEnvelope=ctx.createGain();
+ const toneBus=ctx.createGain();
+ const vibrato=ctx.createOscillator();
+ const vibratoDepth=ctx.createGain();
+ const oscillators=[];
+
+ voiceEnvelope.gain.setValueAtTime(.0001,start);
+ voiceEnvelope.gain.linearRampToValueAtTime(amount,start+.025);
+ voiceEnvelope.gain.setValueAtTime(amount,start+Math.max(.03,duration*.45));
+ voiceEnvelope.gain.exponentialRampToValueAtTime(.0001,start+duration);
+
+ toneBus.gain.setValueAtTime(.42,start);
+
+ const oscillatorSettings=[
+  {type:"sawtooth",detune:-6,gain:.42},
+  {type:"sawtooth",detune:6,gain:.36},
+  {type:"triangle",detune:0,gain:.22}
+ ];
+
+ oscillatorSettings.forEach(setting=>{
+  const oscillator=ctx.createOscillator();
+  const oscillatorGain=ctx.createGain();
+
+  oscillator.type=setting.type;
+  oscillator.frequency.setValueAtTime(baseFrequency,start);
+  oscillator.detune.setValueAtTime(setting.detune,start);
+  oscillatorGain.gain.setValueAtTime(setting.gain,start);
+
+  vibratoDepth.connect(oscillator.detune);
+  oscillator.connect(oscillatorGain).connect(toneBus);
+  oscillator.start(start);
+  oscillator.stop(start+duration+.08);
+  oscillators.push(oscillator);
+ });
+
+ vibrato.frequency.setValueAtTime(options.vibratoRate||5.2,start);
+ vibratoDepth.gain.setValueAtTime(options.vibratoDepth||8,start);
+ vibrato.connect(vibratoDepth);
+ vibrato.start(start);
+ vibrato.stop(start+duration+.08);
+
+ formants.forEach((formant,index)=>{
+  const band=ctx.createBiquadFilter();
+  const formantGain=ctx.createGain();
+
+  band.type="bandpass";
+  band.frequency.setValueAtTime(formant.frequency,start);
+  band.Q.setValueAtTime(formant.q,start);
+  formantGain.gain.setValueAtTime(formant.gain*(index===0?1:.86),start);
+
+  toneBus.connect(band).connect(formantGain).connect(voiceEnvelope);
+ });
+
+ const warmth=ctx.createBiquadFilter();
+ warmth.type="lowpass";
+ warmth.frequency.setValueAtTime(options.brightness||5200,start);
+ warmth.Q.setValueAtTime(.55,start);
+
+ voiceEnvelope.connect(warmth).connect(audio.master);
+
+ if(options.consonant)playBreathyAttack(start-.006,.065,amount*.46);
+}
+
+function updateVoiceAgentCaption(label){
+ const card=ui.agentGrid.querySelector('[data-agent="voice"]');
+ if(!card)return;
+ const role=card.querySelector(".agent-role");
+ const description=card.querySelector(".agent-description");
+ if(role)role.textContent="Chœurs & vocal chops";
+ if(description)description.textContent=label||"Voyelles synthétiques originales";
+}
+
 function playVoiceAgent(chord,time,stepInBar,energy){
  if(!activeAgents.has("voice"))return;
- if(stepInBar!==2&&stepInBar!==6)return;
- const root=midiToHz(chord.root+24+(stepInBar===6?7:4));
- playTone(root,time,.32,"sine",.011+.010*energy);
- playTone(root*1.5,time+.025,.25,"triangle",.006+.006*energy);
- playTone(root*2,time+.045,.18,"sine",.003+.004*energy);
+
+ const phrase=VOICE_PHRASES[voicePhraseIndex];
+ const event=phrase.events.find(item=>item.step===stepInBar);
+ if(!event)return;
+
+ const sectionLift=songSection===SongSection.CHORUS?12:0;
+ const midi=chord.root+12+sectionLift+event.degree;
+ const amount=.042+energy*.035;
+
+ playVowelVoice(
+  midi,
+  time,
+  event.duration,
+  event.vowel,
+  amount,
+  {
+   consonant:event.consonant,
+   vibratoRate:5.0+(phraseCycle%3)*.35,
+   vibratoDepth:songSection===SongSection.CHORUS?11:7,
+   brightness:songSection===SongSection.CHORUS?6500:5200
+  }
+ );
+
+ if(songSection===SongSection.CHORUS&&energy>.66){
+  playVowelVoice(
+   midi-12,
+   time+.018,
+   event.duration*.95,
+   event.vowel,
+   amount*.45,
+   {
+    vibratoRate:4.7,
+    vibratoDepth:6,
+    brightness:4300
+   }
+  );
+ }
+}
+
+async function previewVoiceAgent(event){
+ event?.stopPropagation();
+
+ try{
+  if(!audio){
+   audio=createAudio();
+  }
+  await audio.ctx.resume();
+
+  const start=audio.ctx.currentTime+.06;
+  const preview=[
+   {offset:0,midi:69,vowel:"oh",duration:.38},
+   {offset:.42,midi:72,vowel:"ah",duration:.34},
+   {offset:.82,midi:76,vowel:"eh",duration:.30,consonant:true},
+   {offset:1.18,midi:72,vowel:"oh",duration:.46}
+  ];
+
+  setAgentVisualState("voice","active");
+  updateVoiceAgentCaption("Test : oh · ah · hey · oh");
+
+  preview.forEach(note=>{
+   playVowelVoice(
+    note.midi,
+    start+note.offset,
+    note.duration,
+    note.vowel,
+    .070,
+    {consonant:note.consonant,vibratoDepth:9,brightness:6200}
+   );
+  });
+
+  window.setTimeout(()=>{
+   if(!activeAgents.has("voice"))setAgentVisualState("voice","inactive");
+   updateVoiceAgentCaption(activeAgents.has("voice")?VOICE_PHRASES[voicePhraseIndex].label:null);
+  },1900);
+ }catch(error){
+  setStatus("Impossible de tester la voix.");
+ }
 }
 
 function playRiseAgent(chord,time,stepInBar){
@@ -511,11 +761,14 @@ function scheduleStep(time){
   lastHookPattern=hookPatternIndex;
   lastReplyPattern=replyPatternIndex;
   lastBassPattern=bassPatternIndex;
+  lastVoicePhrase=voicePhraseIndex;
   hookPatternIndex=chooseNonRepeating(HOOK_PATTERNS.length,lastHookPattern);
   replyPatternIndex=chooseNonRepeating(REPLY_PATTERNS.length,lastReplyPattern);
   bassPatternIndex=chooseNonRepeating(BASS_PATTERNS.length,lastBassPattern);
+  voicePhraseIndex=chooseNonRepeating(VOICE_PHRASES.length,lastVoicePhrase);
 
   chooseAgentSet(energy);
+  updateVoiceAgentCaption(activeAgents.has("voice")?VOICE_PHRASES[voicePhraseIndex].label:null);
 
   if(activeAgents.has("cloud")){
    playPad(chord.notes,time,BAR*.92,Math.max(.42,energy)*sectionMix.melody);

@@ -1,5 +1,5 @@
-const CACHE="drivepulse-v7-2";
-const ASSETS=["./","./index.html","./style.css?v=7.2","./app.js?v=7.2","./manifest.webmanifest"];
+const CACHE="drivepulse-v7-3";
+const ASSETS=["./","./index.html","./style.css?v=7.3","./app.js?v=7.3","./manifest.webmanifest"];
 
 self.addEventListener("install",event=>{
   self.skipWaiting();

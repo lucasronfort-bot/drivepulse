@@ -502,3 +502,20 @@ meter{width:100%;height:8px;margin-top:12px;accent-color:var(--blue)}
   .panel-heading{display:block}
   .panel-heading .agent-legend{margin-top:10px}
 }
+
+
+.agent-preview{
+  position:absolute;
+  right:10px;
+  bottom:9px;
+  min-height:28px;
+  padding:5px 9px;
+  border:1px solid color-mix(in srgb,var(--agent-color) 44%,transparent);
+  border-radius:9px;
+  color:var(--agent-color);
+  background:color-mix(in srgb,var(--agent-color) 9%,rgba(0,0,0,.3));
+  font-size:.66rem;
+  font-weight:850;
+}
+.agent-preview:active{transform:translateY(1px)}
+.agent-card[data-agent="voice"] .agent-description{padding-right:54px}

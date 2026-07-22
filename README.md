@@ -1,4 +1,4 @@
-# DrivePulse Web V7.2
+# DrivePulse Web V7.3
 
 ## Correction majeure
 
@@ -50,3 +50,26 @@ Créer la branche `drivepulse-v7-2`, puis remplacer les fichiers à la racine.
 Commit conseillé :
 
 `DrivePulse V7.2 - new dashboard and real living orchestra`
+
+
+## Voice Engine V7.3
+
+Le personnage Voice n'utilise aucun contenu audio ou code provenant d'Incredibox.
+
+Le nouveau moteur vocal repose sur une synthèse originale avec la Web Audio API :
+
+- source glottale composée de trois oscillateurs ;
+- trois filtres de formants pour simuler le tractus vocal ;
+- voyelles `ah`, `oh`, `eh`, `ee` et `oo` ;
+- attaque soufflée pour créer des vocal chops proches de `hey` ;
+- vibrato ;
+- voix grave doublée dans les refrains ;
+- cinq phrases vocales sélectionnées sans répétition immédiate ;
+- activation pendant les montées, refrains et reprises ;
+- bouton `Tester` sur la carte Voice.
+
+Cette approche reprend uniquement le principe général de la synthèse par tractus vocal. Aucun son, personnage, arrangement ou code propriétaire d'Incredibox n'est inclus.
+
+Commit conseillé :
+
+`DrivePulse V7.3 - formant vocal engine and voice preview`
