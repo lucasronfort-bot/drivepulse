@@ -31,3 +31,6 @@ meter,input[type=range]{width:100%}
 .speed-card{grid-column:1/-1}
 .state-grid{grid-template-columns:repeat(3,1fr)}
 }
+
+.toggle-row{display:flex!important;align-items:center;justify-content:space-between;margin:0 0 14px!important;padding:14px;background:rgba(255,255,255,.05);border-radius:14px}
+.toggle-row input{width:24px;height:24px}

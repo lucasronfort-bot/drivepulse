@@ -5,7 +5,7 @@ const ui={
  speed:$("speed"),accel:$("accelMeter"),brake:$("brakeMeter"),turn:$("turnMeter"),music:$("musicMeter"),
  accelValue:$("accelValue"),brakeValue:$("brakeValue"),turnValue:$("turnValue"),musicValue:$("musicValue"),
  mode:$("modeLabel"),bar:$("barLabel"),energy:$("energyLabel"),chord:$("chordState"),bass:$("bassState"),
- drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),
+ drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),idlePiano:$("idlePianoToggle"),
  responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
 };
 
@@ -73,25 +73,52 @@ function playElectricPiano(midi,start,dur=.7,gain=.055){
  playTone(freq*3,start,dur*.45,"sine",gain*.10,-3);
 }
 function playIdleBed(chord,start,stepInBar,barIndex){
- // Fond permanent, même véhicule arrêté.
+ // Fond harmonique permanent.
  if(stepInBar===0){
    chord.notes.forEach((m,i)=>{
-     playTone(midiToHz(m-12),start,BAR*.96,"sine",.028,(i-1)*3);
-     playTone(midiToHz(m),start,BAR*.90,"triangle",.012,(1-i)*2);
+     playTone(midiToHz(m-12),start,BAR*.96,"sine",.034,(i-1)*3);
+     playTone(midiToHz(m),start,BAR*.90,"triangle",.016,(1-i)*2);
    });
  }
- // Petite mélodie lente : piano électrique sur une mesure, synthé doux sur la suivante.
- const pianoPattern=[0,null,1,null,2,null,1,null];
- const synthPattern=[2,null,1,null,0,null,1,null];
- const pattern=barIndex%2===0?pianoPattern:synthPattern;
- const noteIndex=pattern[stepInBar];
- if(noteIndex!==null){
-   const midi=chord.notes[noteIndex]+12;
-   if(barIndex%2===0) playElectricPiano(midi,start,.65,.05);
-   else {
-     playTone(midiToHz(midi),start,.55,"triangle",.035);
-     playTone(midiToHz(midi+12),start,.38,"sine",.012,4);
-   }
+
+ const pianoEnabled=ui.idlePiano.checked;
+ const nearlyStopped=speedKmh<8 && smoothed.accel<.18 && smoothed.brake<.35;
+
+ if(!pianoEnabled || !nearlyStopped){
+   // Mélodie minimale quand le piano à l'arrêt est désactivé ou que la voiture roule.
+   const pattern=[0,null,1,null,2,null,1,null];
+   const idx=pattern[stepInBar];
+   if(idx!==null) playTone(midiToHz(chord.notes[idx]+12),start,.48,"triangle",.026);
+   return;
+ }
+
+ // Solo de piano original, énergique et mélodique.
+ // Codes utilisés : progressive house, piano EDM, montée émotionnelle,
+ // syncopes légères et alternance grave/aigu.
+ const phraseA=[0,1,2,1,0,2,1,2];
+ const phraseB=[2,1,0,1,2,0,1,0];
+ const phrase=(barIndex%2===0)?phraseA:phraseB;
+ const degree=phrase[stepInBar];
+
+ const base=chord.notes[degree]+12;
+ const accent=(stepInBar===0||stepInBar===4);
+ const high=(stepInBar===3||stepInBar===7);
+
+ playElectricPiano(base,start,accent?.88:.62,accent?.09:.068);
+
+ if(high){
+   playElectricPiano(base+12,start+.03,.52,.046);
+ }
+
+ // Note d'appui basse pour donner davantage de corps à l'arrêt.
+ if(stepInBar===0||stepInBar===4){
+   playElectricPiano(chord.root-12,start,.72,.055);
+ }
+
+ // Réponse mélodique courte sur les contretemps.
+ if(stepInBar===1||stepInBar===5){
+   const responseNote=chord.notes[(degree+1)%3]+12;
+   playElectricPiano(responseNote,start+BEAT/4,.40,.041);
  }
 }
 function playPad(notes,start,dur,intensity){
@@ -134,7 +161,7 @@ function modeFromDriving(a,b,t){
  return"cruise";
 }
 function computeEnergy(a,b,t){
- return clamp(.1+clamp(speedKmh/110)*.35+a*.48+t*.18-b*.25);
+ return clamp(.22+clamp(speedKmh/110)*.35+a*.48+t*.18-b*.20);
 }
 function scheduleStep(time){
  const a=smoothed.accel,b=smoothed.brake,t=smoothed.turn;
@@ -181,7 +208,7 @@ function scheduleStep(time){
    audio.master.gain.setTargetAtTime(.42,now,.06);
  }else{
    audio.filter.frequency.setTargetAtTime(5500+energy*11000,now,.12);
-   audio.master.gain.setTargetAtTime(.62,now,.12);
+   audio.master.gain.setTargetAtTime(speedKmh<8?.72:.62,now,.12);
  }
 
  updateUi(chord,energy,barIndex);
@@ -203,7 +230,7 @@ function updateUi(chord,energy,barIndex){
  ui.arp.textContent=currentMode==="boost"?"Dense":currentMode==="curve"?"Présent":"Discret";
  ui.filter.textContent=currentMode==="brake"?"Fermé":"Ouvert";
  ui.variation.textContent=variation===0?"A":"B";
- ui.idle.textContent=barIndex%2===0?"Piano électrique":"Synthé doux";
+ ui.idle.textContent=ui.idlePiano.checked&&speedKmh<8?"Solo piano":"Fond synthétique";
  ui.music.value=energy;ui.musicValue.value=energy.toFixed(2);
 }
 function startGps(){
@@ -289,3 +316,8 @@ ui.calibrate.addEventListener("click",beginCalibration);
 ui.stop.addEventListener("click",stop);
 ui.demo.addEventListener("click",startDemo);
 if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js").catch(()=>{});
+
+ui.idlePiano.checked=localStorage.getItem("drivepulse-idle-piano")!=="off";
+ui.idlePiano.addEventListener("change",()=>{
+ localStorage.setItem("drivepulse-idle-piano",ui.idlePiano.checked?"on":"off");
+});
