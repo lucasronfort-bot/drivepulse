@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060a12">
-<title>DrivePulse V7.3</title>
+<title>DrivePulse V8</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=7.3">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <main class="app-shell">
 
 <header class="topbar">
   <div class="brand-block">
-    <p class="eyebrow">Toyota C-HR · Prototype V7.3</p>
+    <p class="eyebrow">Toyota C-HR · Prototype V8</p>
     <h1>Drive<span>Pulse</span></h1>
     <p id="status" class="status"><i></i> Prêt</p>
   </div>
@@ -136,9 +136,9 @@
     <section class="glass-panel compact-panel">
       <div class="toggle-copy">
         <div>
-          <p class="section-kicker">Piano à l’arrêt</p>
-          <strong>Solo mélodique</strong>
-          <small>Le piano reste vivant lorsque le véhicule est immobilisé.</small>
+          <p class="section-kicker">Musique à l’arrêt</p>
+          <strong>Ambiance douce</strong>
+          <small>Les pads, effets et accords restent audibles lorsque le véhicule est immobilisé.</small>
         </div>
         <label class="switch">
           <input id="idlePianoToggle" type="checkbox" checked>
@@ -178,10 +178,10 @@
     <div class="section-timeline" id="sectionTimeline">
       <div data-section="intro"><b>⌂</b><span>Intro</span></div>
       <div data-section="groove"><b>●</b><span>Groove</span></div>
-      <div data-section="build"><b>▥</b><span>Montée</span></div>
-      <div data-section="chorus"><b>★</b><span>Refrain</span></div>
+      <div data-section="drive"><b>▥</b><span>Montée</span></div>
       <div data-section="breakdown"><b>≈</b><span>Respiration</span></div>
-      <div data-section="reprise"><b>↻</b><span>Reprise</span></div>
+      <div data-section="chorus"><b>★</b><span>Refrain</span></div>
+      <div data-section="finale"><b>↻</b><span>Finale</span></div>
     </div>
   </section>
 
@@ -241,25 +241,26 @@
   <section class="glass-panel composition-panel">
     <div class="panel-heading compact">
       <div>
-        <p class="section-kicker">Composition générative</p>
-        <h2>État du morceau</h2>
+        <p class="section-kicker">Mixage adaptatif</p>
+        <h2>État des stems</h2>
       </div>
     </div>
 
     <div class="composition-grid">
-      <div><span>Accords</span><strong id="chordState">Am</strong></div>
+      <div><span>Source</span><strong id="chordState">Kalte Ohren</strong></div>
       <div><span>Basse</span><strong id="bassState">Douce</strong></div>
       <div><span>Batterie</span><strong id="drumState">Calme</strong></div>
       <div><span>Arpège</span><strong id="arpState">Discret</strong></div>
       <div><span>Filtre</span><strong id="filterState">Ouvert</strong></div>
-      <div><span>Variation</span><strong id="variationState">A</strong></div>
-      <div><span>Fond</span><strong id="idleState">Piano électrique</strong></div>
+      <div><span>Séquence cible</span><strong id="variationState">Intro</strong></div>
+      <div><span>À l’arrêt</span><strong id="idleState">Stems doux</strong></div>
     </div>
   </section>
 </div>
 
 <footer class="safety-note">
-  <strong>Sécurité :</strong> manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.
+  <strong>Sécurité :</strong> manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.<br>
+  Musique adaptée de « Kalte Ohren (Cold Ears) » par starfrosch feat. Jerry Spoon — licence CC BY 3.0.
 </footer>
 
 </main>
@@ -273,6 +274,6 @@
   </div>
 </div>
 
-<script src="app.js?v=7.3"></script>
+<script src="app.js?v=8"></script>
 </body>
 </html>

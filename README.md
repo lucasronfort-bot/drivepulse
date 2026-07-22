@@ -1,75 +1,57 @@
-# DrivePulse Web V7.3
+# DrivePulse Web V8 — Adaptive Stem Engine
 
-## Correction majeure
+DrivePulse V8 remplace le moteur musical procédural principal par un morceau composé par des artistes et découpé en stems synchronisés.
 
-La V7.2 ne se contente plus d'ajouter un panneau à l'ancienne interface :
-elle reprend réellement la nouvelle maquette du tableau de bord.
+## Source musicale
 
-## Nouvelle interface
+`Kalte Ohren (Cold Ears)` — starfrosch feat. Jerry Spoon, sous licence CC BY 3.0.
 
-- résumé supérieur : profil route, vitesse, vitesse musicale, énergie et section ;
-- orchestre des douze personnages placé au centre de l'écran ;
-- état visible pour chaque personnage : actif, transition ou inactif ;
-- réglages regroupés dans une colonne dédiée ;
-- frise des sections musicales ;
-- mémoire courte et longue ;
-- capteurs et état de composition déplacés dans des panneaux secondaires ;
-- interface responsive pour iPhone et ordinateur.
+Consulter `ATTRIBUTION.md` pour le crédit complet.
 
-## Moteur musical V7
+## Architecture audio
 
-Les personnages pilotent réellement les couches sonores :
+- tempo fixe : 120 BPM ;
+- mesure : 4/4 ;
+- boucle : 8 mesures, soit 16 secondes ;
+- 6 séquences : Intro, Groove, Montée, Respiration, Refrain et Finale ;
+- 12 personnages/stems ;
+- changement de séquence uniquement à la limite d'une boucle ;
+- niveaux des stems modifiés continuellement selon la conduite.
+
+## Personnages
 
 - Pulse : kick ;
-- Clap : snare et claps ;
-- Spark : hi-hat ;
-- Sub : basse principale ;
-- Bounce : basse syncopée ;
-- Keys : piano et accords ;
-- Cloud : nappes ;
-- Hook : mélodie principale ;
-- Reply : contrechant ;
-- Motion : percussions ;
-- Voice : textures vocales synthétiques ;
-- Rise : transitions et impacts.
+- Clap : snare et rim ;
+- Spark : hi-hats ;
+- Sub : sub-bass ;
+- Bounce : basses médium et haute ;
+- Keys : Rhodes ;
+- Cloud : pads et textures ;
+- Hook : pluck et synth lead ;
+- Motion : bongos et percussions ;
+- Guitar : guitare ;
+- Rise : risers, lifts et impacts ;
+- Aura : delay et réverbération.
 
-## Réduction de la répétition
+## Chargement
 
-- six progressions harmoniques ;
-- huit motifs mélodiques ;
-- six contrechants ;
-- cinq lignes de basse ;
-- quatre arpèges ;
-- variations de batterie selon les sections ;
-- sélection évitant une répétition immédiate.
+Seule la séquence actuelle et la séquence demandée sont décodées. Les autres fichiers restent compressés, afin de limiter la mémoire utilisée sur iPhone.
 
-## Mise à jour GitHub
+Les fichiers audio sont mis en cache progressivement par le service worker après leur première utilisation.
 
-Créer la branche `drivepulse-v7-2`, puis remplacer les fichiers à la racine.
+## Installation GitHub
 
-Commit conseillé :
+Déposer tous les fichiers et dossiers à la racine de la branche :
 
-`DrivePulse V7.2 - new dashboard and real living orchestra`
-
-
-## Voice Engine V7.3
-
-Le personnage Voice n'utilise aucun contenu audio ou code provenant d'Incredibox.
-
-Le nouveau moteur vocal repose sur une synthèse originale avec la Web Audio API :
-
-- source glottale composée de trois oscillateurs ;
-- trois filtres de formants pour simuler le tractus vocal ;
-- voyelles `ah`, `oh`, `eh`, `ee` et `oo` ;
-- attaque soufflée pour créer des vocal chops proches de `hey` ;
-- vibrato ;
-- voix grave doublée dans les refrains ;
-- cinq phrases vocales sélectionnées sans répétition immédiate ;
-- activation pendant les montées, refrains et reprises ;
-- bouton `Tester` sur la carte Voice.
-
-Cette approche reprend uniquement le principe général de la synthèse par tractus vocal. Aucun son, personnage, arrangement ou code propriétaire d'Incredibox n'est inclus.
+- `index.html`
+- `style.css`
+- `app.js`
+- `manifest.webmanifest`
+- `sw.js`
+- `README.md`
+- `ATTRIBUTION.md`
+- `audio/kalte-ohren/`
 
 Commit conseillé :
 
-`DrivePulse V7.3 - formant vocal engine and voice preview`
+`DrivePulse V8 - adaptive CC BY stem engine`
