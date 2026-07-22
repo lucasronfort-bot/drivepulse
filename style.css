@@ -1,1 +1,18 @@
-*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif}.app{width:min(780px,100%);margin:auto;padding:24px 18px 44px}.eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:.72rem;opacity:.65;margin:0}h1{font-size:clamp(2.5rem,12vw,4.8rem);margin:4px 0}.controls,.dashboard{display:grid;gap:10px;margin:14px 0}.panel,.speed,.metric{background:#ffffff12;border:1px solid #ffffff18;border-radius:20px;padding:18px}button{min-height:50px;border:0;border-radius:15px;background:#27324a;color:white;font-size:1rem;font-weight:700;padding:10px}.primary{background:white;color:#0b1020}button:disabled{opacity:.35}.speed{display:flex;justify-content:space-between;align-items:end}.speed strong{font-size:1.8rem}.metric div{display:flex;justify-content:space-between;margin-bottom:8px}meter,input{width:100%}.stems{display:grid;gap:12px;margin-bottom:14px}.stems label{display:grid;grid-template-columns:90px 1fr;gap:10px}.panel h2{margin-top:0;font-size:1rem}@media(min-width:620px){.controls{grid-template-columns:2fr 1fr 1fr}.dashboard{grid-template-columns:1fr 1fr}.speed{grid-column:1/-1}.stems{grid-template-columns:1fr 1fr}}
+
+:root{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#0b1020;color:#f8fafc}
+.app{width:min(800px,100%);margin:auto;padding:max(20px,env(safe-area-inset-top)) 18px 44px}
+.eyebrow{margin:0;text-transform:uppercase;letter-spacing:.15em;font-size:.72rem;opacity:.65}
+h1{margin:4px 0;font-size:clamp(2.4rem,11vw,4.8rem);line-height:.95}.status{opacity:.8}
+.panel,.speed-card,.metric,.notes{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:18px}
+.controls{display:grid;gap:10px;margin:14px 0}.dashboard{display:grid;gap:12px;margin:14px 0}
+button,select{min-height:50px;border:0;border-radius:15px;padding:10px 14px;font-size:1rem}
+button{font-weight:700;background:#27324a;color:white}button.primary{background:#f8fafc;color:#0b1020}button:disabled{opacity:.35}
+select{width:100%;margin-top:8px;background:#182238;color:white}
+.toggle{display:flex;gap:10px;align-items:center;margin-top:14px}
+.speed-card{display:flex;justify-content:space-between;align-items:end}.speed-card span{opacity:.7}.speed-card strong{font-size:1.8rem}
+.metric div{display:flex;justify-content:space-between;margin-bottom:10px}meter,input[type=range]{width:100%}
+.panel h2,.notes h2{margin-top:0;font-size:1rem}.panel label{display:block;margin-bottom:14px}.state-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.state-grid div{background:rgba(255,255,255,.05);border-radius:14px;padding:12px}.state-grid span{display:block;font-size:.75rem;opacity:.65}.state-grid strong{display:block;margin-top:4px}
+.notes{margin-top:14px}.notes p{line-height:1.45;margin-bottom:0}
+@media(min-width:620px){.controls{grid-template-columns:2fr 1fr 1fr}.dashboard{grid-template-columns:1fr 1fr}.speed-card{grid-column:1/-1}}
