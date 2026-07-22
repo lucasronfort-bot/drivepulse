@@ -1,59 +1,55 @@
-# DrivePulse Web V6
+# DrivePulse Web V7
 
-## Structure musicale adaptative
+## Orchestre vivant
 
-La V6 ajoute un véritable directeur musical au moteur génératif.
+La V7 remplace le réglage manuel de densité par un directeur musical autonome.
 
-### Sections disponibles
-- Intro
-- Groove
-- Montée
-- Refrain
-- Respiration
-- Reprise
+Le moteur utilise douze personnages musicaux originaux, inspirés du principe général d’un ensemble vocal et instrumental modulaire :
 
-Les changements de section sont appliqués uniquement en début de mesure afin de conserver une cohérence musicale.
+- Pulse : kick
+- Clap : caisse claire
+- Spark : hi-hat et shaker
+- Sub : basse profonde
+- Bounce : basse rythmique
+- Keys : piano et accords
+- Cloud : nappes
+- Hook : mélodie principale
+- Reply : contrechant
+- Motion : percussions
+- Voice : voix synthétique originale
+- Rise : transitions et impacts
 
-## Mémoire de conduite
+Chaque personnage s’active ou se désactive selon :
+- la vitesse ;
+- l’énergie ;
+- le type de route ;
+- les virages ;
+- la section du morceau ;
+- la mémoire courte et longue de conduite.
 
-### Mémoire courte
-Réagit sur quelques secondes aux variations immédiates :
-- vitesse ;
-- accélération ;
-- freinage ;
-- virages.
+## Réduction de la répétition
 
-### Mémoire longue
-Évolue plus lentement et représente le climat global du trajet.
+La V7 ajoute :
+- plusieurs progressions d’accords ;
+- plusieurs motifs de hook ;
+- plusieurs contrechants ;
+- une sélection évitant la répétition immédiate ;
+- des phrases qui évoluent sur plusieurs mesures ;
+- des arrangements différents selon Intro, Groove, Montée, Refrain, Respiration et Reprise.
 
-Une accélération courte peut déclencher une montée, mais un refrain demande une énergie ou une vitesse élevée maintenue.
+## Réglages
 
-## Effets des sections
+Le réglage `Densité musicale` a été supprimé. La richesse du morceau est désormais gérée automatiquement.
 
-- Intro : piano et nappes, rythme léger.
-- Groove : basse et batterie régulières.
-- Montée : densification du rythme et de la mélodie.
-- Refrain : instrumentation maximale.
-- Respiration : filtre fermé et rythme réduit.
-- Reprise : retour progressif de la batterie.
-
-## Scénario de test
-
-Le bouton `Scénario trajet complet` simule :
-1. arrêt ;
-2. accélération en ville ;
-3. vitesse urbaine constante ;
-4. passage en campagne ;
-5. route sinueuse ;
-6. accélération autoroutière ;
-7. vitesse élevée constante ;
-8. freinage ;
-9. retour à l'arrêt.
+Les réglages conservés sont :
+- Réactivité musicale ;
+- Sensibilité accélération ;
+- Sensibilité virage.
 
 ## Déploiement GitHub
 
-Remplace les fichiers de la V5.3 par ceux de cette archive sur `main`.
+Remplacer les fichiers de la V6.1 par ceux de cette archive.
 
 Commit conseillé :
 
-`DrivePulse V6 - adaptive song structure and driving memory`
+`DrivePulse V7 - living orchestra and non-repeating arrangements`
