@@ -3,105 +3,276 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#080b14">
-<title>DrivePulse V5</title>
+<meta name="theme-color" content="#060a12">
+<title>DrivePulse V7.2</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=7.2">
 </head>
 <body>
-<main class="app">
-<header>
-<p class="eyebrow">Toyota C-HR · Prototype V7.1</p>
-<h1>DrivePulse</h1>
-<p id="status" class="status">Prêt</p>
+<main class="app-shell">
+
+<header class="topbar">
+  <div class="brand-block">
+    <p class="eyebrow">Toyota C-HR · Prototype V7.2</p>
+    <h1>Drive<span>Pulse</span></h1>
+    <p id="status" class="status"><i></i> Prêt</p>
+  </div>
+
+  <div class="top-actions">
+    <button id="startBtn" class="primary action-button">▶ Démarrer</button>
+    <button id="calibrateBtn" class="action-button" disabled>◎ Calibrer</button>
+    <button id="stopBtn" class="action-button danger" disabled>■ Arrêter</button>
+  </div>
 </header>
 
-<section class="panel hero">
-<div><span>Mode</span><strong id="modeLabel">Cruise</strong></div>
-<div><span>Mesure</span><strong id="barLabel">1 / 8</strong></div>
-<div><span>Énergie</span><strong id="energyLabel">0%</strong></div>
+<section class="summary-strip" aria-label="Résumé de conduite">
+  <article class="summary-card">
+    <span>Mode route</span>
+    <strong id="roadState">Ville</strong>
+    <small id="roadModeHelp">Référence 50 km/h</small>
+  </article>
+
+  <article class="summary-card speed-summary">
+    <span>Vitesse</span>
+    <strong><b id="speed">0</b> km/h</strong>
+    <small>GPS en temps réel</small>
+  </article>
+
+  <article class="summary-card">
+    <span>Vitesse musicale</span>
+    <strong id="speedMusicState">0%</strong>
+    <div class="summary-progress"><i id="speedMusicTrack"></i></div>
+  </article>
+
+  <article class="summary-card">
+    <span>Énergie</span>
+    <strong id="energyLabel">0%</strong>
+    <div class="summary-progress energy-progress"><i id="energyTrack"></i></div>
+  </article>
+
+  <article class="summary-card">
+    <span>Section</span>
+    <strong id="sectionState">Intro</strong>
+    <small id="modeLabel">Cruise</small>
+  </article>
 </section>
 
-<section class="controls">
-<button id="startBtn" class="primary">Démarrer</button>
-<button id="calibrateBtn" disabled>Calibrer</button>
-<button id="stopBtn" disabled>Arrêter</button>
-</section>
-
-<section class="dashboard">
-<article class="speed-card">
-<span>Vitesse GPS</span>
-<strong><span id="speed">0</span> km/h</strong>
-</article>
-
-<article class="metric"><div><span>Accélération</span><output id="accelValue">0.00</output></div><meter id="accelMeter" min="0" max="1" value="0"></meter></article>
-<article class="metric"><div><span>Freinage</span><output id="brakeValue">0.00</output></div><meter id="brakeMeter" min="0" max="1" value="0"></meter></article>
-<article class="metric"><div><span>Virage</span><output id="turnValue">0.00</output></div><meter id="turnMeter" min="0" max="1" value="0"></meter></article>
-<article class="metric"><div><span>Intensité</span><output id="musicValue">0.00</output></div><meter id="musicMeter" min="0" max="1" value="0"></meter></article>
-</section>
-
-<section class="panel">
-<h2>Composition générative</h2>
-<div class="state-grid">
-<div><span>Accords</span><strong id="chordState">Am</strong></div>
-<div><span>Basse</span><strong id="bassState">Douce</strong></div>
-<div><span>Batterie</span><strong id="drumState">Calme</strong></div>
-<div><span>Arpège</span><strong id="arpState">Discret</strong></div>
-<div><span>Filtre</span><strong id="filterState">Ouvert</strong></div>
-<div><span>Variation</span><strong id="variationState">A</strong></div>
-<div><span>Fond permanent</span><strong id="idleState">Piano électrique</strong></div>
-<div><span>Profil route</span><strong id="roadState">Ville</strong></div>
-<div><span>Vitesse musicale</span><strong id="speedMusicState">0%</strong></div>
-<div><span>Section</span><strong id="sectionState">Intro</strong></div>
-<div><span>Mémoire courte</span><strong id="shortMemoryState">0%</strong></div>
-<div><span>Mémoire longue</span><strong id="longMemoryState">0%</strong></div>
-</div>
-<label class="toggle-row">
-  <span>Piano à l’arrêt</span>
-  <input id="idlePianoToggle" type="checkbox" checked>
-</label>
-<button id="demoBtn" disabled>Mode démonstration</button>
-<button id="journeyBtn" disabled>Scénario trajet complet</button>
-</section>
-
-<section class="panel">
-<h2>Profil de route</h2>
-<div class="road-modes" role="group" aria-label="Profil de route">
-  <button class="road-mode active" data-road-mode="city">Ville · 50</button>
-  <button class="road-mode" data-road-mode="country">Campagne · 80</button>
-  <button class="road-mode" data-road-mode="highway">Autoroute · 130</button>
-</div>
-<p class="mode-help" id="roadModeHelp">Échelle musicale optimisée jusqu’à environ 50 km/h.</p>
-</section>
-
-
-
-<section class="panel orchestra-panel">
-  <div class="orchestra-header">
-    <div>
-      <h2>Personnages musicaux</h2>
-      <p class="panel-description">Chaque personnage représente une couche réellement pilotée par le moteur musical.</p>
-    </div>
-    <div class="agent-legend" aria-label="Légende des personnages">
-      <span><i class="status-dot active-dot"></i> Actif</span>
-      <span><i class="status-dot transition-dot"></i> Transition</span>
-      <span><i class="status-dot inactive-dot"></i> Inactif</span>
-    </div>
+<section class="utility-bar">
+  <button id="demoBtn" disabled>Simulation libre</button>
+  <button id="journeyBtn" disabled>Scénario trajet complet</button>
+  <div class="measure-pill">
+    <span>Mesure</span>
+    <strong id="barLabel">1 / 8</strong>
   </div>
-  <div id="agentGrid" class="agent-grid" aria-live="polite"></div>
 </section>
 
+<div class="main-layout">
 
-<section class="panel">
-<h2>Réglages</h2>
+  <section class="glass-panel orchestra-panel">
+    <div class="panel-heading">
+      <div>
+        <p class="section-kicker">Orchestre musical</p>
+        <h2>Personnages actifs</h2>
+        <p>Chaque personnage correspond à un instrument réellement utilisé dans le morceau.</p>
+      </div>
 
+      <div class="agent-legend">
+        <span><i class="dot active"></i> Actif</span>
+        <span><i class="dot transition"></i> Transition</span>
+        <span><i class="dot inactive"></i> Inactif</span>
+      </div>
+    </div>
 
+    <div id="agentGrid" class="agent-grid" aria-live="polite"></div>
+  </section>
 
-<section class="notes">
-<h2>Sécurité</h2>
-<p>Manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.</p>
-</section>
+  <aside class="side-column">
+
+    <section class="glass-panel settings-panel">
+      <div class="panel-heading compact">
+        <div>
+          <p class="section-kicker">Réglages</p>
+          <h2>Réactivité</h2>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">
+          <label for="responsiveness">Réactivité musicale</label>
+          <button class="help-btn" type="button" data-help="responsiveness" aria-label="Aide sur la réactivité musicale">?</button>
+        </div>
+        <div class="range-line">
+          <input id="responsiveness" type="range" min="0.5" max="2" step="0.1" value="1">
+          <output id="responsivenessValue">1.0</output>
+        </div>
+        <small>Vitesse à laquelle l’arrangement réagit aux changements.</small>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">
+          <label for="accelSensitivity">Sensibilité accélération</label>
+          <button class="help-btn" type="button" data-help="accelSensitivity" aria-label="Aide sur la sensibilité à l'accélération">?</button>
+        </div>
+        <div class="range-line">
+          <input id="accelSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1">
+          <output id="accelSensitivityValue">1.00</output>
+        </div>
+        <small>Influence des accélérations et des freinages.</small>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">
+          <label for="turnSensitivity">Sensibilité virage</label>
+          <button class="help-btn" type="button" data-help="turnSensitivity" aria-label="Aide sur la sensibilité aux virages">?</button>
+        </div>
+        <div class="range-line">
+          <input id="turnSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1">
+          <output id="turnSensitivityValue">1.00</output>
+        </div>
+        <small>Influence des courbes sur les mélodies et percussions.</small>
+      </div>
+    </section>
+
+    <section class="glass-panel compact-panel">
+      <div class="toggle-copy">
+        <div>
+          <p class="section-kicker">Piano à l’arrêt</p>
+          <strong>Solo mélodique</strong>
+          <small>Le piano reste vivant lorsque le véhicule est immobilisé.</small>
+        </div>
+        <label class="switch">
+          <input id="idlePianoToggle" type="checkbox" checked>
+          <span></span>
+        </label>
+      </div>
+    </section>
+
+    <section class="glass-panel road-panel">
+      <div class="panel-heading compact">
+        <div>
+          <p class="section-kicker">Mode route</p>
+          <h2>Profil de vitesse</h2>
+        </div>
+      </div>
+
+      <div class="road-modes" role="group" aria-label="Profil de route">
+        <button class="road-mode active" data-road-mode="city"><b>▥</b><span>Ville</span><small>50 km/h</small></button>
+        <button class="road-mode" data-road-mode="country"><b>▲</b><span>Campagne</span><small>80 km/h</small></button>
+        <button class="road-mode" data-road-mode="highway"><b>║</b><span>Autoroute</span><small>130 km/h</small></button>
+      </div>
+    </section>
+
+  </aside>
+</div>
+
+<div class="lower-layout">
+
+  <section class="glass-panel section-panel">
+    <div class="panel-heading compact">
+      <div>
+        <p class="section-kicker">Structure</p>
+        <h2>Section musicale actuelle</h2>
+      </div>
+    </div>
+
+    <div class="section-timeline" id="sectionTimeline">
+      <div data-section="intro"><b>⌂</b><span>Intro</span></div>
+      <div data-section="groove"><b>●</b><span>Groove</span></div>
+      <div data-section="build"><b>▥</b><span>Montée</span></div>
+      <div data-section="chorus"><b>★</b><span>Refrain</span></div>
+      <div data-section="breakdown"><b>≈</b><span>Respiration</span></div>
+      <div data-section="reprise"><b>↻</b><span>Reprise</span></div>
+    </div>
+  </section>
+
+  <section class="glass-panel memory-panel">
+    <div class="panel-heading compact">
+      <div>
+        <p class="section-kicker">Mémoire de conduite</p>
+        <h2>Climat du trajet</h2>
+      </div>
+    </div>
+
+    <div class="memory-grid">
+      <div>
+        <span>Court terme</span>
+        <strong id="shortMemoryState">0%</strong>
+        <meter id="shortMemoryMeter" min="0" max="1" value="0"></meter>
+      </div>
+      <div>
+        <span>Long terme</span>
+        <strong id="longMemoryState">0%</strong>
+        <meter id="longMemoryMeter" min="0" max="1" value="0"></meter>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="details-layout">
+
+  <section class="glass-panel sensor-panel">
+    <div class="panel-heading compact">
+      <div>
+        <p class="section-kicker">Capteurs</p>
+        <h2>Dynamique du véhicule</h2>
+      </div>
+    </div>
+
+    <div class="sensor-grid">
+      <article class="metric">
+        <div><span>Accélération</span><output id="accelValue">0.00</output></div>
+        <meter id="accelMeter" min="0" max="1" value="0"></meter>
+      </article>
+      <article class="metric">
+        <div><span>Freinage</span><output id="brakeValue">0.00</output></div>
+        <meter id="brakeMeter" min="0" max="1" value="0"></meter>
+      </article>
+      <article class="metric">
+        <div><span>Virage</span><output id="turnValue">0.00</output></div>
+        <meter id="turnMeter" min="0" max="1" value="0"></meter>
+      </article>
+      <article class="metric">
+        <div><span>Intensité</span><output id="musicValue">0.00</output></div>
+        <meter id="musicMeter" min="0" max="1" value="0"></meter>
+      </article>
+    </div>
+  </section>
+
+  <section class="glass-panel composition-panel">
+    <div class="panel-heading compact">
+      <div>
+        <p class="section-kicker">Composition générative</p>
+        <h2>État du morceau</h2>
+      </div>
+    </div>
+
+    <div class="composition-grid">
+      <div><span>Accords</span><strong id="chordState">Am</strong></div>
+      <div><span>Basse</span><strong id="bassState">Douce</strong></div>
+      <div><span>Batterie</span><strong id="drumState">Calme</strong></div>
+      <div><span>Arpège</span><strong id="arpState">Discret</strong></div>
+      <div><span>Filtre</span><strong id="filterState">Ouvert</strong></div>
+      <div><span>Variation</span><strong id="variationState">A</strong></div>
+      <div><span>Fond</span><strong id="idleState">Piano électrique</strong></div>
+    </div>
+  </section>
+</div>
+
+<footer class="safety-note">
+  <strong>Sécurité :</strong> manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.
+</footer>
+
 </main>
-<script src="app.js"></script>
+
+<div id="helpModal" class="help-modal" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button id="closeHelpBtn" class="help-close" type="button" aria-label="Fermer">×</button>
+    <h2 id="helpTitle">Réglage</h2>
+    <p id="helpText"></p>
+    <p id="helpRecommendation" class="help-recommendation"></p>
+  </div>
+</div>
+
+<script src="app.js?v=7.2"></script>
 </body>
 </html>

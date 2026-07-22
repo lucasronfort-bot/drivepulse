@@ -10,16 +10,29 @@ const ui={
  section:$("sectionState"),shortMemory:$("shortMemoryState"),longMemory:$("longMemoryState"),
  journey:$("journeyBtn"),responsiveness:$("responsiveness"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity"),
  responsivenessValue:$("responsivenessValue"),accelSensitivityValue:$("accelSensitivityValue"),turnSensitivityValue:$("turnSensitivityValue"),
- helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn")
+ helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn"),
+ agentGrid:$("agentGrid"),speedMusicTrack:$("speedMusicTrack"),energyTrack:$("energyTrack"),
+ shortMemoryMeter:$("shortMemoryMeter"),longMemoryMeter:$("longMemoryMeter")
 };
 
 const BPM=118,BEAT=60/BPM,BAR=BEAT*4,LOOP_BARS=8;
-const progression=[
- {name:"Am",root:57,notes:[57,60,64]},
- {name:"F",root:53,notes:[53,57,60]},
- {name:"C",root:48,notes:[48,52,55]},
- {name:"G",root:55,notes:[55,59,62]}
+const CHORDS={
+ Am:{name:"Am",root:57,notes:[57,60,64]},
+ F:{name:"F",root:53,notes:[53,57,60]},
+ C:{name:"C",root:48,notes:[48,52,55]},
+ G:{name:"G",root:55,notes:[55,59,62]},
+ Dm:{name:"Dm",root:50,notes:[50,53,57]},
+ Em:{name:"Em",root:52,notes:[52,55,59]}
+};
+const PROGRESSIONS=[
+ [CHORDS.Am,CHORDS.F,CHORDS.C,CHORDS.G],
+ [CHORDS.Am,CHORDS.C,CHORDS.F,CHORDS.G],
+ [CHORDS.F,CHORDS.C,CHORDS.G,CHORDS.Am],
+ [CHORDS.Am,CHORDS.G,CHORDS.F,CHORDS.C],
+ [CHORDS.Dm,CHORDS.F,CHORDS.C,CHORDS.G],
+ [CHORDS.Am,CHORDS.Em,CHORDS.F,CHORDS.G]
 ];
+let progressionIndex=0,lastProgressionIndex=-1;
 
 let running=false,watchId=null,demoTimer=null,journeyTimer=null,schedulerTimer=null;
 let speedKmh=0,demoPhase=0,calibrationActive=false,calibrationSamples=[];
@@ -30,9 +43,9 @@ let songSection=SongSection.INTRO,targetSection=SongSection.INTRO,sectionBars=0;
 let shortMemory=0,longMemory=0,stableSpeedMemory=0,lastSpeedSample=0,lastMemoryUpdate=performance.now();
 let roadMode=localStorage.getItem("drivepulse-road-mode")||"city";
 const ROAD_PROFILES={
- city:{label:"Ville",maxSpeed:50,driveAt:.28,boostAt:.78,help:"Échelle musicale optimisée jusqu’à environ 50 km/h."},
- country:{label:"Campagne",maxSpeed:80,driveAt:.32,boostAt:.82,help:"Échelle musicale optimisée jusqu’à environ 80 km/h."},
- highway:{label:"Autoroute",maxSpeed:130,driveAt:.36,boostAt:.86,help:"Échelle musicale optimisée jusqu’à environ 130 km/h."}
+ city:{label:"Ville",maxSpeed:50,driveAt:.28,boostAt:.78,help:"Référence 50 km/h"},
+ country:{label:"Campagne",maxSpeed:80,driveAt:.32,boostAt:.82,help:"Référence 80 km/h"},
+ highway:{label:"Autoroute",maxSpeed:130,driveAt:.36,boostAt:.86,help:"Référence 130 km/h"}
 };
 
 const clamp=(v,min=0,max=1)=>Math.max(min,Math.min(max,v));
@@ -186,6 +199,202 @@ function computeEnergy(a,b,t){
  return clamp(.22+s*.62+a*.18+t*.10-b*.18);
 }
 
+
+const MUSIC_AGENTS=[
+ {id:"pulse",emoji:"🥁",name:"PULSE",role:"Kick",description:"Battement principal",color:"#ff5d67"},
+ {id:"clap",emoji:"👏",name:"CLAP",role:"Claps & snare",description:"Rythme principal",color:"#a66cff"},
+ {id:"spark",emoji:"✨",name:"SPARK",role:"Hi-hat & shaker",description:"Dynamique rythmique",color:"#ffc13d"},
+ {id:"sub",emoji:"🎸",name:"SUB",role:"Basse profonde",description:"Fondations",color:"#25c5ff"},
+ {id:"bounce",emoji:"🎸",name:"BOUNCE",role:"Basse rythmique",description:"Groove & mouvement",color:"#44dc72"},
+ {id:"keys",emoji:"🎹",name:"KEYS",role:"Piano & accords",description:"Harmonie",color:"#f06ec7"},
+ {id:"cloud",emoji:"☁️",name:"CLOUD",role:"Nappes & textures",description:"Atmosphère",color:"#36d8ea"},
+ {id:"hook",emoji:"🎤",name:"HOOK",role:"Mélodie principale",description:"Thème actuel",color:"#dc65d9"},
+ {id:"reply",emoji:"🔔",name:"REPLY",role:"Contrechant",description:"Réponses & variations",color:"#ff9a2f"},
+ {id:"motion",emoji:"🪘",name:"MOTION",role:"Percussions",description:"Mouvement organique",color:"#ffad31"},
+ {id:"voice",emoji:"🎙️",name:"VOICE",role:"Voix synthétique",description:"Textures vocales",color:"#37d6d3"},
+ {id:"rise",emoji:"🌊",name:"RISE",role:"FX & impacts",description:"Transitions",color:"#a853f2"}
+];
+
+const activeAgents=new Set();
+const agentVisualState=new Map();
+let hookPatternIndex=0,replyPatternIndex=0,bassPatternIndex=0,phraseCycle=0;
+let lastHookPattern=-1,lastReplyPattern=-1,lastBassPattern=-1;
+
+const HOOK_PATTERNS=[
+ [0,null,2,4,null,2,1,2],
+ [4,2,null,0,2,null,4,7],
+ [7,null,4,2,4,5,null,4],
+ [0,4,7,null,9,7,5,4],
+ [2,null,5,4,2,0,2,null],
+ [7,9,null,11,9,7,4,5],
+ [0,2,4,5,null,4,2,0],
+ [4,null,7,9,7,null,5,2]
+];
+const REPLY_PATTERNS=[
+ [7,9,7,5],
+ [4,5,7,4],
+ [9,7,4,2],
+ [2,4,5,7],
+ [11,9,7,5],
+ [5,7,4,2]
+];
+const BASS_PATTERNS=[
+ [0,2,4,6],
+ [0,3,4,7],
+ [0,2,5,6],
+ [0,1,4,5,7],
+ [0,2,3,6]
+];
+
+function chooseNonRepeating(length,lastIndex){
+ let next=Math.floor(Math.random()*length);
+ if(length>1&&next===lastIndex)next=(next+1+Math.floor(Math.random()*(length-1)))%length;
+ return next;
+}
+
+function renderAgents(){
+ ui.agentGrid.innerHTML=MUSIC_AGENTS.map((agent,index)=>`
+  <article class="agent-card" data-agent="${agent.id}" style="--agent-color:${agent.color}">
+    <div class="agent-head">
+      <div class="agent-avatar">${agent.emoji}</div>
+      <div class="agent-copy">
+        <span class="agent-name">${agent.name}</span>
+        <span class="agent-role">${agent.role}</span>
+      </div>
+    </div>
+    <p class="agent-description">${agent.description}</p>
+    <div class="agent-status"><i></i><span>Inactif</span></div>
+    <div class="agent-meter" aria-hidden="true">
+      ${Array.from({length:14},(_,i)=>`<i style="animation-delay:-${((i*0.09)+(index*0.03)).toFixed(2)}s"></i>`).join("")}
+    </div>
+  </article>`).join("");
+}
+
+function setAgentVisualState(id,state){
+ const card=ui.agentGrid.querySelector(`[data-agent="${id}"]`);
+ if(!card)return;
+ agentVisualState.set(id,state);
+ card.classList.toggle("active",state==="active");
+ card.classList.toggle("transition",state==="transition");
+ const text=card.querySelector(".agent-status span");
+ if(text)text.textContent=state==="active"?"Actif":state==="transition"?"En transition":"Inactif";
+}
+
+function syncAgentSet(nextSet){
+ MUSIC_AGENTS.forEach(agent=>{
+  const wasActive=activeAgents.has(agent.id);
+  const willBeActive=nextSet.has(agent.id);
+
+  if(willBeActive)activeAgents.add(agent.id);
+  else activeAgents.delete(agent.id);
+
+  if(wasActive!==willBeActive){
+   setAgentVisualState(agent.id,"transition");
+   window.setTimeout(()=>{
+    if(activeAgents.has(agent.id)===willBeActive){
+     setAgentVisualState(agent.id,willBeActive?"active":"inactive");
+    }
+   },360);
+  }else{
+   setAgentVisualState(agent.id,willBeActive?"active":"inactive");
+  }
+ });
+}
+
+function chooseAgentSet(energy){
+ const next=new Set(["keys","cloud"]);
+
+ if(speedKmh>2||songSection!==SongSection.INTRO)next.add("pulse");
+ if(energy>.18||speedKmh>8)next.add("sub");
+ if(energy>.26||songSection===SongSection.GROOVE)next.add("clap");
+ if(energy>.30||stableSpeedMemory>.30)next.add("spark");
+ if(energy>.38||songSection===SongSection.BUILD||songSection===SongSection.CHORUS)next.add("bounce");
+ if(energy>.46||songSection===SongSection.BUILD||songSection===SongSection.CHORUS)next.add("hook");
+ if(energy>.58&&songSection!==SongSection.BREAKDOWN)next.add("reply");
+ if(smoothed.turn>.22||roadMode==="country")next.add("motion");
+ if(songSection===SongSection.CHORUS&&sectionBars>=1)next.add("voice");
+ if([SongSection.BUILD,SongSection.BREAKDOWN,SongSection.REPRISE].includes(songSection))next.add("rise");
+
+ syncAgentSet(next);
+}
+
+function playKeysAgent(chord,time,stepInBar,energy){
+ if(!activeAgents.has("keys"))return;
+ if(stepInBar===0||stepInBar===4){
+  const inversion=phraseCycle%3;
+  chord.notes.forEach((note,i)=>{
+   const shifted=note+12+(i<inversion?12:0);
+   playElectricPiano(shifted,time+(i*.018),.42,.028+.016*energy);
+  });
+ }
+ if(songSection===SongSection.CHORUS&&(stepInBar===2||stepInBar===6)){
+  playElectricPiano(chord.notes[(stepInBar/2)%3]+24,time,.26,.032);
+ }
+}
+
+function playBounceAgent(chord,time,stepInBar,boost){
+ if(!activeAgents.has("bounce"))return;
+ const pattern=BASS_PATTERNS[bassPatternIndex];
+ if(pattern.includes(stepInBar)){
+  const passing=stepInBar===7?2:0;
+  playTone(midiToHz(chord.root-12+passing),time,.13,boost?"sawtooth":"square",boost?.050:.035);
+ }
+}
+
+function playHookAgent(chord,time,stepInBar,energy){
+ if(!activeAgents.has("hook"))return;
+ const degree=HOOK_PATTERNS[hookPatternIndex][stepInBar];
+ if(degree===null)return;
+ const octave=songSection===SongSection.CHORUS?24:12;
+ const note=chord.root+degree+octave;
+ playTone(midiToHz(note),time,.18,songSection===SongSection.CHORUS?"sawtooth":"triangle",.018+.026*energy);
+ if(songSection===SongSection.CHORUS&&stepInBar%4===0){
+  playTone(midiToHz(note-12),time,.22,"triangle",.012+.010*energy);
+ }
+}
+
+function playReplyAgent(chord,time,stepInBar,energy){
+ if(!activeAgents.has("reply"))return;
+ if(![1,3,5,7].includes(stepInBar))return;
+ const pattern=REPLY_PATTERNS[replyPatternIndex];
+ const degree=pattern[Math.floor(stepInBar/2)%pattern.length];
+ playTone(midiToHz(chord.root+24+degree),time+.02,.12,"sine",.012+.012*energy);
+}
+
+function playMotionAgent(time,stepInBar,energy){
+ if(!activeAgents.has("motion"))return;
+ if(stepInBar===1||stepInBar===5)playHat(time+.03,.024+.020*energy);
+ if(stepInBar===3||stepInBar===7)playTone(165+(stepInBar*7),time,.075,"square",.007+.007*energy);
+}
+
+function playVoiceAgent(chord,time,stepInBar,energy){
+ if(!activeAgents.has("voice"))return;
+ if(stepInBar!==2&&stepInBar!==6)return;
+ const root=midiToHz(chord.root+24+(stepInBar===6?7:4));
+ playTone(root,time,.32,"sine",.011+.010*energy);
+ playTone(root*1.5,time+.025,.25,"triangle",.006+.006*energy);
+ playTone(root*2,time+.045,.18,"sine",.003+.004*energy);
+}
+
+function playRiseAgent(chord,time,stepInBar){
+ if(!activeAgents.has("rise"))return;
+ if(songSection===SongSection.BUILD&&stepInBar>=4){
+  playTone(midiToHz(chord.root+24+stepInBar),time,.095,"sine",.005+.0018*stepInBar);
+ }
+ if(songSection===SongSection.REPRISE&&stepInBar===0){
+  playTone(midiToHz(chord.root+12),time,.55,"triangle",.034);
+ }
+}
+
+function updateSectionTimeline(){
+ document.querySelectorAll("[data-section]").forEach(node=>{
+  node.classList.toggle("current",node.dataset.section===songSection);
+ });
+}
+
+renderAgents();
+MUSIC_AGENTS.forEach(agent=>setAgentVisualState(agent.id,"inactive"));
+
 function updateDrivingMemory(){
  const now=performance.now();
  const dt=Math.min(1,(now-lastMemoryUpdate)/1000);
@@ -279,66 +488,107 @@ function scheduleStep(time){
  const a=smoothed.accel,b=smoothed.brake,t=smoothed.turn;
  currentMode=modeFromDriving(a,b,t);
  updateDrivingMemory();
+
  const speedDrive=speedIntensity();
- const energy=computeEnergy(a,b,t); const sectionMix=sectionMultipliers();
+ const energy=computeEnergy(a,b,t);
+ const sectionMix=sectionMultipliers();
  const barIndex=Math.floor(stepIndex/8)%LOOP_BARS;
  const stepInBar=stepIndex%8;
+
+ if(stepInBar===0&&barIndex===0){
+  lastProgressionIndex=progressionIndex;
+  progressionIndex=chooseNonRepeating(PROGRESSIONS.length,lastProgressionIndex);
+ }
+ const progression=PROGRESSIONS[progressionIndex];
  const chord=progression[Math.floor(barIndex/2)%progression.length];
 
  playIdleBed(chord,time,stepInBar,barIndex);
 
  if(stepInBar===0){
-   applySectionTransition();
-   playPad(chord.notes,time,BAR*.92,Math.max(.35,energy)*sectionMix.melody);
-   barCounter=barIndex;
-   variation=(barIndex+Math.floor(energy*3))%2;
+  applySectionTransition();
+
+  phraseCycle++;
+  lastHookPattern=hookPatternIndex;
+  lastReplyPattern=replyPatternIndex;
+  lastBassPattern=bassPatternIndex;
+  hookPatternIndex=chooseNonRepeating(HOOK_PATTERNS.length,lastHookPattern);
+  replyPatternIndex=chooseNonRepeating(REPLY_PATTERNS.length,lastReplyPattern);
+  bassPatternIndex=chooseNonRepeating(BASS_PATTERNS.length,lastBassPattern);
+
+  chooseAgentSet(energy);
+
+  if(activeAgents.has("cloud")){
+   playPad(chord.notes,time,BAR*.92,Math.max(.42,energy)*sectionMix.melody);
+  }
+
+  barCounter=barIndex;
+  variation=(phraseCycle+Math.floor(energy*4))%4;
  }
 
  const boost=currentMode==="boost";
- const bassPattern=boost?[0,1,2,3,4,5,6,7]:
-   speedDrive>.55?[0,1,2,4,5,6]:
-   currentMode==="drive"?[0,2,4,6]:
-   speedDrive>.18?[0,2,4,6]:[0,4];
- if(bassPattern.includes(stepInBar)){
+
+ if(activeAgents.has("sub")){
+  const subPattern=boost?[0,1,2,3,4,5,6,7]:
+   speedDrive>.60?[0,2,3,4,6,7]:
+   speedDrive>.22?[0,2,4,6]:[0,4];
+  if(subPattern.includes(stepInBar)){
    const octaveJump=boost&&stepInBar===7?12:0;
    playBass(chord.root+octaveJump,time,boost);
-   if(sectionMix.rhythm>1.05 && stepInBar%2===0){
-     playTone(midiToHz(chord.root-12),time,.14,"triangle",.028*sectionMix.rhythm);
-   }
+  }
  }
+
+ playBounceAgent(chord,time,stepInBar,boost);
 
  if(currentMode!=="brake"){
-   const kickLevel=.42+speedDrive*.38+(boost?.10:0);
-   if(stepInBar===0||stepInBar===4||(speedDrive>.82&&stepInBar===6))playKick(time,kickLevel*sectionMix.rhythm);
-   if((speedDrive>.24||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,(.18+speedDrive*.18)*sectionMix.rhythm);
-   if(speedDrive>.18||currentMode==="drive"||currentMode==="boost"){
-     if(stepInBar%2===0||speedDrive>.66||true.1)playHat(time,(.04+speedDrive*.055)*sectionMix.rhythm);
+  const kickLevel=.44+speedDrive*.38+(boost?.12:0);
+  const kickPattern=songSection===SongSection.CHORUS?[0,2,4,6]:
+   songSection===SongSection.BUILD?[0,3,4,6]:
+   [0,4];
+
+  if(activeAgents.has("pulse")&&kickPattern.includes(stepInBar)){
+   playKick(time,kickLevel*sectionMix.rhythm);
+  }
+
+  if(activeAgents.has("clap")&&(stepInBar===2||stepInBar===6)){
+   playSnare(time,(.20+speedDrive*.18)*sectionMix.rhythm);
+  }
+
+  if(activeAgents.has("spark")){
+   const denseHat=songSection===SongSection.CHORUS||songSection===SongSection.BUILD||speedDrive>.62;
+   if(denseHat||stepInBar%2===1){
+    playHat(time,(.038+speedDrive*.052)*sectionMix.rhythm);
    }
+  }
  }
 
- const arpEnabled=songSection!==SongSection.BREAKDOWN &&
-   (speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&true));
+ const arpEnabled=songSection!==SongSection.BREAKDOWN&&
+  (speedDrive>.28||currentMode==="curve"||currentMode==="boost");
  if(arpEnabled){
-   const arpOrder=variation===0?[0,1,2,1,0,1,2,1]:[2,1,0,1,2,1,0,1];
-   const note=chord.notes[arpOrder[stepInBar]]+12;
-   playTone(midiToHz(note),time,.12,currentMode==="boost"?"square":"triangle",currentMode==="boost"?.055:.04);
+  const arpOrders=[
+   [0,1,2,1,0,1,2,1],
+   [2,1,0,1,2,1,0,1],
+   [0,2,1,2,0,2,1,2],
+   [1,2,1,0,1,2,1,0]
+  ];
+  const order=arpOrders[variation%arpOrders.length];
+  const note=chord.notes[order[stepInBar]]+(songSection===SongSection.CHORUS?24:12);
+  playTone(midiToHz(note),time,.11,currentMode==="boost"?"square":"triangle",currentMode==="boost"?.044:.030);
  }
 
- // Motif de vitesse : reste actif à vitesse constante et monte dans le registre.
- if(speedDrive>.20 && stepInBar%2===1){
-   const speedPattern=variation===0?[0,1,2,1]:[2,1,0,1];
-   const idx=speedPattern[Math.floor(stepInBar/2)%4];
-   const octave=speedDrive>.72?24:12;
-   playTone(midiToHz(chord.notes[idx]+octave),time,.18,"triangle",.018+speedDrive*.035);
- }
+ playKeysAgent(chord,time,stepInBar,energy);
+ playHookAgent(chord,time,stepInBar,energy);
+ playReplyAgent(chord,time,stepInBar,energy);
+ playMotionAgent(time,stepInBar,energy);
+ playVoiceAgent(chord,time,stepInBar,energy);
+ playRiseAgent(chord,time,stepInBar);
 
  const now=audio.ctx.currentTime;
  if(currentMode==="brake"){
-   audio.filter.frequency.setTargetAtTime(850+b*900,now,.06);
-   audio.master.gain.setTargetAtTime(.42,now,.06);
+  audio.filter.frequency.setTargetAtTime(850+b*900,now,.06);
+  audio.master.gain.setTargetAtTime(.43,now,.06);
  }else{
-   audio.filter.frequency.setTargetAtTime((4200+energy*11800)*sectionMix.filter,now,.12);
-   audio.master.gain.setTargetAtTime(speedKmh<8?.72:.62,now,.12);
+  audio.filter.frequency.setTargetAtTime((4300+energy*11800)*sectionMix.filter,now,.12);
+  audio.master.gain.setTargetAtTime(speedKmh<8?.72:.64,now,.12);
  }
 
  updateUi(chord,energy,barIndex,speedDrive);
@@ -366,7 +616,12 @@ function updateUi(chord,energy,barIndex,speedDrive){
  ui.section.textContent=sectionLabel(songSection);
  ui.shortMemory.textContent=`${Math.round(shortMemory*100)}%`;
  ui.longMemory.textContent=`${Math.round(longMemory*100)}%`;
+ ui.shortMemoryMeter.value=shortMemory;
+ ui.longMemoryMeter.value=longMemory;
+ ui.speedMusicTrack.style.width=`${Math.round(speedDrive*100)}%`;
+ ui.energyTrack.style.width=`${Math.round(energy*100)}%`;
  ui.music.value=energy;ui.musicValue.value=energy.toFixed(2);
+ updateSectionTimeline();
 }
 function startGps(){
  if(!navigator.geolocation)return;
@@ -494,6 +749,8 @@ async function start(){
   startGps();
   const saved=localStorage.getItem("drivepulse-forward");if(saved)forward=JSON.parse(saved);
   ui.start.disabled=true;ui.calibrate.disabled=false;ui.stop.disabled=false;ui.demo.disabled=false;ui.journey.disabled=false;
+  syncAgentSet(new Set(["keys","cloud"]));
+  updateSectionTimeline();
   setStatus(saved?"Actif avec calibration enregistrée":"Actif : calibre l’axe avant");
  }catch(err){setStatus(err.message||"Impossible de démarrer.");}
 }
@@ -506,6 +763,8 @@ function stop(){
  if(watchId!=null)navigator.geolocation.clearWatch(watchId);
  if(audio)audio.ctx.close();audio=null;
  ui.start.disabled=false;ui.calibrate.disabled=true;ui.stop.disabled=true;ui.demo.disabled=true;ui.journey.disabled=true;
+ activeAgents.clear();
+ MUSIC_AGENTS.forEach(agent=>setAgentVisualState(agent.id,"inactive"));
  setStatus("Arrêté");
 }
 
@@ -531,11 +790,6 @@ const HELP_CONTENT={
    text:"Détermine la vitesse à laquelle DrivePulse réagit aux changements de conduite. Une valeur élevée déclenche plus facilement les modes Drive, Boost ou Curve. Une valeur basse rend les transitions plus progressives.",
    recommendation:"Conseil : commence à 1,0. Monte vers 1,3 si la musique te semble trop lente à réagir."
  },
- density:{
-   title:"Densité musicale",
-   text:"Contrôle la quantité d’éléments joués en même temps : notes de basse, charlestons, arpèges et motifs secondaires. Ce réglage agit sur la richesse du morceau, pas directement sur le volume.",
-   recommendation:"Conseil : 0,8 pour une ambiance épurée, 1,0 pour un équilibre, 1,3 pour une musique plus chargée."
- },
  accelSensitivity:{
    title:"Sensibilité accélération",
    text:"Ajuste la sensibilité du téléphone aux accélérations et aux freinages. Une valeur élevée amplifie les réactions musicales aux mouvements longitudinaux du véhicule.",
@@ -549,7 +803,8 @@ const HELP_CONTENT={
 };
 
 function updateSettingValues(){
- ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1); ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
+ ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);
+ ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
  ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);
 }
 
