@@ -4,26 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1020">
-<title>DrivePulse V3</title>
+<title>DrivePulse V4</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main class="app">
 <header>
-<p class="eyebrow">Toyota C-HR · Prototype V3</p>
+<p class="eyebrow">Toyota C-HR · Prototype V4</p>
 <h1>DrivePulse</h1>
 <p id="status" class="status">Prêt</p>
 </header>
 
-<section class="panel">
-<label>Style musical
-<select id="styleSelect">
-<option value="synthwave">Synthwave Drive</option>
-<option value="cinematic">Cinematic Road</option>
-</select>
-</label>
-<label class="toggle"><input id="quantizeToggle" type="checkbox" checked> Transitions calées sur le prochain temps</label>
+<section class="panel hero">
+<div><span>Mode musical</span><strong id="modeLabel">Cruise</strong></div>
+<div><span>Mesure</span><strong id="barLabel">1 / 8</strong></div>
+<div><span>Énergie</span><strong id="energyLabel">0%</strong></div>
 </section>
 
 <section class="controls">
@@ -41,11 +37,11 @@
 </section>
 
 <section class="panel">
-<h2>État musical</h2>
+<h2>Composition en temps réel</h2>
 <div class="state-grid">
-<div><span>Batterie</span><strong id="drumState">Ambiance</strong></div>
-<div><span>Freinage</span><strong id="brakeState">Normal</strong></div>
-<div><span>Virage</span><strong id="turnState">Calme</strong></div>
+<div><span>Basse</span><strong id="bassState">Douce</strong></div>
+<div><span>Batterie</span><strong id="drumState">Calme</strong></div>
+<div><span>Mélodie</span><strong id="melodyState">A</strong></div>
 </div>
 <button id="demoBtn" disabled>Mode démonstration</button>
 </section>
@@ -54,9 +50,13 @@
 <h2>Réglages</h2>
 <label>Sensibilité accélération <input id="accelSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1"></label>
 <label>Sensibilité virage <input id="turnSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1"></label>
+<label>Réactivité musicale <input id="musicResponsiveness" type="range" min="0.5" max="2" step="0.1" value="1"></label>
 </section>
 
-<section class="notes"><h2>Sécurité</h2><p>Manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.</p></section>
+<section class="notes">
+<h2>Sécurité</h2>
+<p>Manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.</p>
+</section>
 </main>
 <script src="app.js"></script>
 </body>

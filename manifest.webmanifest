@@ -1,9 +1,9 @@
 {
-  "name": "DrivePulse V3",
+  "name": "DrivePulse V4",
   "short_name": "DrivePulse",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#0b1020",
   "theme_color": "#0b1020",
-  "description": "Musique adaptative synchronisée avec la conduite."
+  "description": "Moteur musical adaptatif composé mesure par mesure."
 }

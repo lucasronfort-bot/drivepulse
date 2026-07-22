@@ -1,23 +1,24 @@
-# DrivePulse Web V3
+# DrivePulse Web V4
 
 ## Nouveautés
-- Deux styles : Synthwave Drive et Cinematic Road.
-- Transitions calées sur le prochain temps musical.
-- Deux niveaux de batterie : légère et pleine.
-- Effet de freinage par filtre passe-bas et baisse de volume.
-- Accent musical lors des virages prononcés.
-- Réglage de la sensibilité de l'accélération et des virages.
-- Mode démonstration amélioré.
+- Séquenceur musical basé sur des mesures.
+- Cinq modes de conduite : Cruise, Drive, Boost, Curve et Brake.
+- Sélection dynamique de motifs de basse, batterie et mélodie.
+- Alternance de motifs mélodiques selon la mesure.
+- Transitions déclenchées uniquement au changement de mode.
+- Réactivité musicale réglable.
+- Composition recalculée quatre fois par seconde mais appliquée au début de la mesure suivante.
 
-## Mise à jour
-Remplace tous les fichiers de la V2 par ceux de cette archive en gardant la structure des dossiers `audio/synthwave` et `audio/cinematic`.
+## Mise à jour GitHub Pages
+Remplace tous les fichiers de la V3 par ceux de cette archive.
+Conserve exactement le dossier `audio/synthwave`.
 
 ## Test recommandé
-1. Lance Synthwave Drive en mode démonstration.
-2. Vérifie que la batterie passe d'ambiance à légère puis pleine.
-3. Vérifie que le freinage assombrit le son.
-4. Vérifie qu'un virage prononcé déclenche un accent.
-5. Arrête l'application, change de style, puis relance Cinematic Road.
+1. Lance le mode démonstration.
+2. Observe les changements Cruise, Drive, Boost, Curve et Brake.
+3. Vérifie que les changements sonores se produisent au début des mesures.
+4. Ajuste la réactivité musicale.
+5. Teste ensuite en voiture.
 
 ## Limite actuelle
-Le changement de style nécessite encore d'arrêter puis de redémarrer la lecture.
+La V4 compose à partir de motifs préenregistrés. La prochaine étape pourra générer certaines notes directement dans Web Audio.
