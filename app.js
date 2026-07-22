@@ -5,7 +5,7 @@ const ui={
  speed:$("speed"),accel:$("accelMeter"),brake:$("brakeMeter"),turn:$("turnMeter"),music:$("musicMeter"),
  accelValue:$("accelValue"),brakeValue:$("brakeValue"),turnValue:$("turnValue"),musicValue:$("musicValue"),
  mode:$("modeLabel"),bar:$("barLabel"),energy:$("energyLabel"),chord:$("chordState"),bass:$("bassState"),
- drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),
+ drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),
  responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
 };
 
@@ -66,6 +66,34 @@ function playTone(freq,start,dur,type="sine",gain=.2,detune=0){
  o.type=type;o.frequency.setValueAtTime(freq,start);o.detune.value=detune;
  o.connect(g);o.start(start);o.stop(start+dur+.05);
 }
+function playElectricPiano(midi,start,dur=.7,gain=.055){
+ const freq=midiToHz(midi);
+ playTone(freq,start,dur,"sine",gain);
+ playTone(freq*2,start,dur*.72,"sine",gain*.24,3);
+ playTone(freq*3,start,dur*.45,"sine",gain*.10,-3);
+}
+function playIdleBed(chord,start,stepInBar,barIndex){
+ // Fond permanent, même véhicule arrêté.
+ if(stepInBar===0){
+   chord.notes.forEach((m,i)=>{
+     playTone(midiToHz(m-12),start,BAR*.96,"sine",.028,(i-1)*3);
+     playTone(midiToHz(m),start,BAR*.90,"triangle",.012,(1-i)*2);
+   });
+ }
+ // Petite mélodie lente : piano électrique sur une mesure, synthé doux sur la suivante.
+ const pianoPattern=[0,null,1,null,2,null,1,null];
+ const synthPattern=[2,null,1,null,0,null,1,null];
+ const pattern=barIndex%2===0?pianoPattern:synthPattern;
+ const noteIndex=pattern[stepInBar];
+ if(noteIndex!==null){
+   const midi=chord.notes[noteIndex]+12;
+   if(barIndex%2===0) playElectricPiano(midi,start,.65,.05);
+   else {
+     playTone(midiToHz(midi),start,.55,"triangle",.035);
+     playTone(midiToHz(midi+12),start,.38,"sine",.012,4);
+   }
+ }
+}
 function playPad(notes,start,dur,intensity){
  notes.forEach((m,i)=>{
   playTone(midiToHz(m-12),start,dur,"sine",.035+.018*intensity,(i-1)*4);
@@ -117,8 +145,10 @@ function scheduleStep(time){
  const stepInBar=stepIndex%8;
  const chord=progression[Math.floor(barIndex/2)%progression.length];
 
+ playIdleBed(chord,time,stepInBar,barIndex);
+
  if(stepInBar===0){
-   playPad(chord.notes,time,BAR*.92,energy);
+   playPad(chord.notes,time,BAR*.92,Math.max(.35,energy));
    barCounter=barIndex;
    variation=(barIndex+Math.floor(energy*3))%2;
  }
@@ -173,6 +203,7 @@ function updateUi(chord,energy,barIndex){
  ui.arp.textContent=currentMode==="boost"?"Dense":currentMode==="curve"?"Présent":"Discret";
  ui.filter.textContent=currentMode==="brake"?"Fermé":"Ouvert";
  ui.variation.textContent=variation===0?"A":"B";
+ ui.idle.textContent=barIndex%2===0?"Piano électrique":"Synthé doux";
  ui.music.value=energy;ui.musicValue.value=energy.toFixed(2);
 }
 function startGps(){

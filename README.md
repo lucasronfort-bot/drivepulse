@@ -1,27 +1,20 @@
-# DrivePulse Web V5
+# DrivePulse Web V5.1
 
-## Nouveautés
-- Plus aucun fichier audio WAV.
-- Composition générée en temps réel avec Web Audio API.
-- Accords, basse, batterie, arpèges et filtre produits dynamiquement.
-- Cinq modes : Cruise, Drive, Boost, Curve et Brake.
-- Variations A/B sur les arpèges.
-- Filtre audio dynamique selon le freinage.
-- Densité et réactivité musicale réglables.
-- Taille du projet fortement réduite.
+## Modification principale
+La musique ne disparaît plus lorsque le véhicule est à l’arrêt.
+
+Un fond permanent est maintenant généré :
+- nappe harmonique douce ;
+- mélodie lente au piano électrique ;
+- alternance avec un synthé doux ;
+- maintien d’un niveau musical minimal en mode Cruise.
+
+Les éléments dynamiques (basse, batterie, arpèges et filtre) continuent de réagir à la conduite.
 
 ## Mise à jour GitHub
-1. Remplace `index.html`, `style.css`, `app.js`, `manifest.webmanifest`, `sw.js` et `README.md`.
-2. Le dossier `audio` n'est plus utilisé en V5.
-3. Tu peux donc supprimer entièrement l'ancien dossier `audio`.
-4. Commit conseillé : `DrivePulse V5 - generative audio engine`.
+Remplace les fichiers de la V5 par ceux de cette archive sur `main`.
 
-## Test
-1. Lance le mode démonstration.
-2. Observe les modes Cruise, Drive, Boost, Curve et Brake.
-3. Vérifie que la basse et la batterie deviennent plus denses en Boost.
-4. Vérifie que les arpèges sont davantage présents en Curve.
-5. Vérifie que le freinage ferme le filtre et réduit le volume.
+Aucun dossier audio n’est nécessaire.
 
-## Note
-La musique est une composition originale de synthwave nocturne. Elle ne reproduit pas une œuvre existante.
+Commit conseillé :
+`DrivePulse V5.1 - persistent idle melody`
