@@ -1,0 +1,9 @@
+{
+  "name": "DrivePulse V1",
+  "short_name": "DrivePulse",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#111827",
+  "description": "Prototype musical adaptatif basé sur les mouvements de conduite."
+}
