@@ -8,7 +8,9 @@ const ui={
  drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),idlePiano:$("idlePianoToggle"),
  road:$("roadState"),speedMusic:$("speedMusicState"),roadHelp:$("roadModeHelp"),
  section:$("sectionState"),shortMemory:$("shortMemoryState"),longMemory:$("longMemoryState"),
- journey:$("journeyBtn"),responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity")
+ journey:$("journeyBtn"),responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity"),
+ responsivenessValue:$("responsivenessValue"),densityValue:$("densityValue"),accelSensitivityValue:$("accelSensitivityValue"),turnSensitivityValue:$("turnSensitivityValue"),
+ helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn")
 };
 
 const BPM=118,BEAT=60/BPM,BAR=BEAT*4,LOOP_BARS=8;
@@ -523,6 +525,65 @@ document.querySelectorAll(".road-mode").forEach(btn=>{
  btn.addEventListener("click",()=>applyRoadMode(btn.dataset.roadMode));
 });
 applyRoadMode(roadMode);
+
+
+const HELP_CONTENT={
+ responsiveness:{
+   title:"Réactivité musicale",
+   text:"Détermine la vitesse à laquelle DrivePulse réagit aux changements de conduite. Une valeur élevée déclenche plus facilement les modes Drive, Boost ou Curve. Une valeur basse rend les transitions plus progressives.",
+   recommendation:"Conseil : commence à 1,0. Monte vers 1,3 si la musique te semble trop lente à réagir."
+ },
+ density:{
+   title:"Densité musicale",
+   text:"Contrôle la quantité d’éléments joués en même temps : notes de basse, charlestons, arpèges et motifs secondaires. Ce réglage agit sur la richesse du morceau, pas directement sur le volume.",
+   recommendation:"Conseil : 0,8 pour une ambiance épurée, 1,0 pour un équilibre, 1,3 pour une musique plus chargée."
+ },
+ accelSensitivity:{
+   title:"Sensibilité accélération",
+   text:"Ajuste la sensibilité du téléphone aux accélérations et aux freinages. Une valeur élevée amplifie les réactions musicales aux mouvements longitudinaux du véhicule.",
+   recommendation:"Conseil : garde 1,0 après calibration. Réduis la valeur si les réactions sont trop brusques ou augmente-la si elles sont trop faibles."
+ },
+ turnSensitivity:{
+   title:"Sensibilité virage",
+   text:"Ajuste la sensibilité aux virages et aux changements de direction. Une valeur élevée fait apparaître plus facilement les arpèges, accents et variations associés aux courbes.",
+   recommendation:"Conseil : 1,0 est le meilleur point de départ. Sur une route sinueuse, essaie 1,2 à 1,4."
+ }
+};
+
+function updateSettingValues(){
+ ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);
+ ui.densityValue.value=Number(ui.density.value).toFixed(1);
+ ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
+ ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);
+}
+
+function openHelp(key){
+ const item=HELP_CONTENT[key];
+ if(!item)return;
+ ui.helpTitle.textContent=item.title;
+ ui.helpText.textContent=item.text;
+ ui.helpRecommendation.textContent=item.recommendation;
+ ui.helpModal.hidden=false;
+}
+
+function closeHelp(){
+ ui.helpModal.hidden=true;
+}
+
+document.querySelectorAll(".help-btn").forEach(btn=>{
+ btn.addEventListener("click",()=>openHelp(btn.dataset.help));
+});
+ui.closeHelp.addEventListener("click",closeHelp);
+ui.helpModal.addEventListener("click",e=>{
+ if(e.target===ui.helpModal)closeHelp();
+});
+document.addEventListener("keydown",e=>{
+ if(e.key==="Escape"&&!ui.helpModal.hidden)closeHelp();
+});
+[ui.responsiveness,ui.density,ui.accelSensitivity,ui.turnSensitivity].forEach(input=>{
+ input.addEventListener("input",updateSettingValues);
+});
+updateSettingValues();
 
 ui.start.addEventListener("click",start);
 ui.calibrate.addEventListener("click",beginCalibration);

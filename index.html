@@ -11,7 +11,7 @@
 <body>
 <main class="app">
 <header>
-<p class="eyebrow">Toyota C-HR · Prototype V6</p>
+<p class="eyebrow">Toyota C-HR · Prototype V7</p>
 <h1>DrivePulse</h1>
 <p id="status" class="status">Prêt</p>
 </header>
@@ -74,13 +74,56 @@
 <p class="mode-help" id="roadModeHelp">Échelle musicale optimisée jusqu’à environ 50 km/h.</p>
 </section>
 
+
+<section class="panel">
+<h2>Orchestre vivant</h2>
+<p class="panel-description">Les personnages musicaux entrent et sortent automatiquement selon la conduite et la structure du morceau.</p>
+<div id="agentGrid" class="agent-grid" aria-live="polite"></div>
+</section>
+
 <section class="panel">
 <h2>Réglages</h2>
-<label>Réactivité musicale <input id="responsiveness" type="range" min="0.5" max="2" step="0.1" value="1"></label>
-<label>Densité musicale <input id="density" type="range" min="0.5" max="1.5" step="0.1" value="1"></label>
-<label>Sensibilité accélération <input id="accelSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1"></label>
-<label>Sensibilité virage <input id="turnSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1"></label>
+
+<div class="setting-row">
+  <div class="setting-title">
+    <label for="responsiveness">Réactivité musicale</label>
+    <button class="help-btn" type="button" data-help="responsiveness" aria-label="Aide sur la réactivité musicale">?</button>
+  </div>
+  <input id="responsiveness" type="range" min="0.5" max="2" step="0.1" value="1">
+  <output id="responsivenessValue">1.0</output>
+</div>
+
+<input id="density" type="range" min="0.5" max="1.5" step="0.1" value="1">
+  <output id="densityValue">1.0</output>
+</div>
+
+<div class="setting-row">
+  <div class="setting-title">
+    <label for="accelSensitivity">Sensibilité accélération</label>
+    <button class="help-btn" type="button" data-help="accelSensitivity" aria-label="Aide sur la sensibilité à l'accélération">?</button>
+  </div>
+  <input id="accelSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1">
+  <output id="accelSensitivityValue">1.00</output>
+</div>
+
+<div class="setting-row">
+  <div class="setting-title">
+    <label for="turnSensitivity">Sensibilité virage</label>
+    <button class="help-btn" type="button" data-help="turnSensitivity" aria-label="Aide sur la sensibilité aux virages">?</button>
+  </div>
+  <input id="turnSensitivity" type="range" min="0.6" max="1.8" step="0.05" value="1">
+  <output id="turnSensitivityValue">1.00</output>
+</div>
 </section>
+
+<div id="helpModal" class="help-modal" hidden>
+  <div class="help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <button id="closeHelpBtn" class="help-close" type="button" aria-label="Fermer">×</button>
+    <h2 id="helpTitle">Réglage</h2>
+    <p id="helpText"></p>
+    <p id="helpRecommendation" class="help-recommendation"></p>
+  </div>
+</div>
 
 <section class="notes">
 <h2>Sécurité</h2>
