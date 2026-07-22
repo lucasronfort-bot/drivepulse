@@ -1,0 +1,9 @@
+{
+  "name": "DrivePulse V7.1",
+  "short_name": "DrivePulse",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080b14",
+  "theme_color": "#080b14",
+  "description": "Musique générative adaptative selon la conduite."
+}
