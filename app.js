@@ -8,8 +8,8 @@ const ui={
  drum:$("drumState"),arp:$("arpState"),filter:$("filterState"),variation:$("variationState"),idle:$("idleState"),idlePiano:$("idlePianoToggle"),
  road:$("roadState"),speedMusic:$("speedMusicState"),roadHelp:$("roadModeHelp"),
  section:$("sectionState"),shortMemory:$("shortMemoryState"),longMemory:$("longMemoryState"),
- journey:$("journeyBtn"),responsiveness:$("responsiveness"),density:$("density"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity"),
- responsivenessValue:$("responsivenessValue"),densityValue:$("densityValue"),accelSensitivityValue:$("accelSensitivityValue"),turnSensitivityValue:$("turnSensitivityValue"),
+ journey:$("journeyBtn"),responsiveness:$("responsiveness"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity"),
+ responsivenessValue:$("responsivenessValue"),accelSensitivityValue:$("accelSensitivityValue"),turnSensitivityValue:$("turnSensitivityValue"),
  helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn")
 };
 
@@ -280,9 +280,7 @@ function scheduleStep(time){
  currentMode=modeFromDriving(a,b,t);
  updateDrivingMemory();
  const speedDrive=speedIntensity();
- const energy=computeEnergy(a,b,t);
- const density=Number(ui.density.value);
- const sectionMix=sectionMultipliers();
+ const energy=computeEnergy(a,b,t); const sectionMix=sectionMultipliers();
  const barIndex=Math.floor(stepIndex/8)%LOOP_BARS;
  const stepInBar=stepIndex%8;
  const chord=progression[Math.floor(barIndex/2)%progression.length];
@@ -314,12 +312,12 @@ function scheduleStep(time){
    if(stepInBar===0||stepInBar===4||(speedDrive>.82&&stepInBar===6))playKick(time,kickLevel*sectionMix.rhythm);
    if((speedDrive>.24||currentMode==="curve")&&(stepInBar===2||stepInBar===6))playSnare(time,(.18+speedDrive*.18)*sectionMix.rhythm);
    if(speedDrive>.18||currentMode==="drive"||currentMode==="boost"){
-     if(stepInBar%2===0||speedDrive>.66||density>1.1)playHat(time,(.04+speedDrive*.055)*sectionMix.rhythm);
+     if(stepInBar%2===0||speedDrive>.66||true.1)playHat(time,(.04+speedDrive*.055)*sectionMix.rhythm);
    }
  }
 
  const arpEnabled=songSection!==SongSection.BREAKDOWN &&
-   (speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&density>1));
+   (speedDrive>.34||currentMode==="curve"||currentMode==="boost"||(currentMode==="drive"&&true));
  if(arpEnabled){
    const arpOrder=variation===0?[0,1,2,1,0,1,2,1]:[2,1,0,1,2,1,0,1];
    const note=chord.notes[arpOrder[stepInBar]]+12;
@@ -551,9 +549,7 @@ const HELP_CONTENT={
 };
 
 function updateSettingValues(){
- ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);
- ui.densityValue.value=Number(ui.density.value).toFixed(1);
- ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
+ ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1); ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
  ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);
 }
 
@@ -580,7 +576,7 @@ ui.helpModal.addEventListener("click",e=>{
 document.addEventListener("keydown",e=>{
  if(e.key==="Escape"&&!ui.helpModal.hidden)closeHelp();
 });
-[ui.responsiveness,ui.density,ui.accelSensitivity,ui.turnSensitivity].forEach(input=>{
+[ui.responsiveness,ui.accelSensitivity,ui.turnSensitivity].forEach(input=>{
  input.addEventListener("input",updateSettingValues);
 });
 updateSettingValues();

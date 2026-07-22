@@ -1,4 +1,4 @@
-# DrivePulse Web V7
+# DrivePulse Web V7.1
 
 ## Orchestre vivant
 
@@ -53,3 +53,17 @@ Remplacer les fichiers de la V6.1 par ceux de cette archive.
 Commit conseillé :
 
 `DrivePulse V7 - living orchestra and non-repeating arrangements`
+
+
+## Correctifs V7.1
+
+- suppression complète du réglage `Densité musicale` dans le HTML et le JavaScript ;
+- ajout d'une interface détaillée pour les douze personnages musicaux ;
+- état visible pour chaque personnage : Actif, En transition ou Inactif ;
+- animation visuelle lors des entrées et sorties ;
+- indicateur graphique d'activité par personnage ;
+- cache PWA renommé en `drivepulse-v7-1`.
+
+Commit conseillé :
+
+`DrivePulse V7.1 - fix settings and show active music agents`
