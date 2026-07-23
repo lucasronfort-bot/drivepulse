@@ -1,9 +1,9 @@
-const CACHE="drivepulse-v8";
+const CACHE="drivepulse-v8-1";
 const CORE=[
  "./",
  "./index.html",
- "./style.css?v=8",
- "./app.js?v=8",
+ "./style.css?v=8.1",
+ "./app.js?v=8.1",
  "./manifest.webmanifest",
  "./audio/kalte-ohren/manifest.json"
 ];
@@ -27,7 +27,7 @@ self.addEventListener("fetch",event=>{
 
  if(request.mode==="navigate"){
   event.respondWith(
-   fetch(request)
+   fetch(request,{cache:"no-cache"})
     .then(response=>{
      const copy=response.clone();
      caches.open(CACHE).then(cache=>cache.put("./index.html",copy));

@@ -1,425 +1,94 @@
 {
+  "title": "Kalte Ohren (Cold Ears)",
+  "artist": "starfrosch feat. Jerry Spoon",
+  "license": "CC BY 3.0",
   "bpm": 120,
-  "bars": 8,
-  "duration": 16,
-  "segments": {
+  "bar_duration": 2,
+  "loop_duration": 16,
+  "format": "AAC-LC 256 kb/s, 44.1 kHz, stereo",
+  "buses": [
+    "rhythm",
+    "tops",
+    "bass",
+    "harmony",
+    "lead",
+    "fx"
+  ],
+  "scenes": {
     "intro": {
       "start": 0,
       "files": {
-        "pulse": "audio/kalte-ohren/intro/pulse.m4a",
-        "clap": "audio/kalte-ohren/intro/clap.m4a",
-        "spark": "audio/kalte-ohren/intro/spark.m4a",
-        "sub": "audio/kalte-ohren/intro/sub.m4a",
-        "bounce": "audio/kalte-ohren/intro/bounce.m4a",
-        "keys": "audio/kalte-ohren/intro/keys.m4a",
-        "cloud": "audio/kalte-ohren/intro/cloud.m4a",
-        "hook": "audio/kalte-ohren/intro/hook.m4a",
-        "motion": "audio/kalte-ohren/intro/motion.m4a",
-        "guitar": "audio/kalte-ohren/intro/guitar.m4a",
-        "rise": "audio/kalte-ohren/intro/rise.m4a",
-        "aura": "audio/kalte-ohren/intro/aura.m4a"
+        "rhythm": "audio/kalte-ohren/intro/rhythm.m4a",
+        "tops": "audio/kalte-ohren/intro/tops.m4a",
+        "bass": "audio/kalte-ohren/intro/bass.m4a",
+        "harmony": "audio/kalte-ohren/intro/harmony.m4a",
+        "lead": "audio/kalte-ohren/intro/lead.m4a",
+        "fx": "audio/kalte-ohren/intro/fx.m4a"
       }
     },
     "groove": {
       "start": 32,
       "files": {
-        "pulse": "audio/kalte-ohren/groove/pulse.m4a",
-        "clap": "audio/kalte-ohren/groove/clap.m4a",
-        "spark": "audio/kalte-ohren/groove/spark.m4a",
-        "sub": "audio/kalte-ohren/groove/sub.m4a",
-        "bounce": "audio/kalte-ohren/groove/bounce.m4a",
-        "keys": "audio/kalte-ohren/groove/keys.m4a",
-        "cloud": "audio/kalte-ohren/groove/cloud.m4a",
-        "hook": "audio/kalte-ohren/groove/hook.m4a",
-        "motion": "audio/kalte-ohren/groove/motion.m4a",
-        "guitar": "audio/kalte-ohren/groove/guitar.m4a",
-        "rise": "audio/kalte-ohren/groove/rise.m4a",
-        "aura": "audio/kalte-ohren/groove/aura.m4a"
+        "rhythm": "audio/kalte-ohren/groove/rhythm.m4a",
+        "tops": "audio/kalte-ohren/groove/tops.m4a",
+        "bass": "audio/kalte-ohren/groove/bass.m4a",
+        "harmony": "audio/kalte-ohren/groove/harmony.m4a",
+        "lead": "audio/kalte-ohren/groove/lead.m4a",
+        "fx": "audio/kalte-ohren/groove/fx.m4a"
       }
     },
     "drive": {
       "start": 64,
       "files": {
-        "pulse": "audio/kalte-ohren/drive/pulse.m4a",
-        "clap": "audio/kalte-ohren/drive/clap.m4a",
-        "spark": "audio/kalte-ohren/drive/spark.m4a",
-        "sub": "audio/kalte-ohren/drive/sub.m4a",
-        "bounce": "audio/kalte-ohren/drive/bounce.m4a",
-        "keys": "audio/kalte-ohren/drive/keys.m4a",
-        "cloud": "audio/kalte-ohren/drive/cloud.m4a",
-        "hook": "audio/kalte-ohren/drive/hook.m4a",
-        "motion": "audio/kalte-ohren/drive/motion.m4a",
-        "guitar": "audio/kalte-ohren/drive/guitar.m4a",
-        "rise": "audio/kalte-ohren/drive/rise.m4a",
-        "aura": "audio/kalte-ohren/drive/aura.m4a"
+        "rhythm": "audio/kalte-ohren/drive/rhythm.m4a",
+        "tops": "audio/kalte-ohren/drive/tops.m4a",
+        "bass": "audio/kalte-ohren/drive/bass.m4a",
+        "harmony": "audio/kalte-ohren/drive/harmony.m4a",
+        "lead": "audio/kalte-ohren/drive/lead.m4a",
+        "fx": "audio/kalte-ohren/drive/fx.m4a"
       }
     },
     "breakdown": {
       "start": 96,
       "files": {
-        "pulse": "audio/kalte-ohren/breakdown/pulse.m4a",
-        "clap": "audio/kalte-ohren/breakdown/clap.m4a",
-        "spark": "audio/kalte-ohren/breakdown/spark.m4a",
-        "sub": "audio/kalte-ohren/breakdown/sub.m4a",
-        "bounce": "audio/kalte-ohren/breakdown/bounce.m4a",
-        "keys": "audio/kalte-ohren/breakdown/keys.m4a",
-        "cloud": "audio/kalte-ohren/breakdown/cloud.m4a",
-        "hook": "audio/kalte-ohren/breakdown/hook.m4a",
-        "motion": "audio/kalte-ohren/breakdown/motion.m4a",
-        "guitar": "audio/kalte-ohren/breakdown/guitar.m4a",
-        "rise": "audio/kalte-ohren/breakdown/rise.m4a",
-        "aura": "audio/kalte-ohren/breakdown/aura.m4a"
+        "rhythm": "audio/kalte-ohren/breakdown/rhythm.m4a",
+        "tops": "audio/kalte-ohren/breakdown/tops.m4a",
+        "bass": "audio/kalte-ohren/breakdown/bass.m4a",
+        "harmony": "audio/kalte-ohren/breakdown/harmony.m4a",
+        "lead": "audio/kalte-ohren/breakdown/lead.m4a",
+        "fx": "audio/kalte-ohren/breakdown/fx.m4a"
       }
     },
     "chorus": {
       "start": 128,
       "files": {
-        "pulse": "audio/kalte-ohren/chorus/pulse.m4a",
-        "clap": "audio/kalte-ohren/chorus/clap.m4a",
-        "spark": "audio/kalte-ohren/chorus/spark.m4a",
-        "sub": "audio/kalte-ohren/chorus/sub.m4a",
-        "bounce": "audio/kalte-ohren/chorus/bounce.m4a",
-        "keys": "audio/kalte-ohren/chorus/keys.m4a",
-        "cloud": "audio/kalte-ohren/chorus/cloud.m4a",
-        "hook": "audio/kalte-ohren/chorus/hook.m4a",
-        "motion": "audio/kalte-ohren/chorus/motion.m4a",
-        "guitar": "audio/kalte-ohren/chorus/guitar.m4a",
-        "rise": "audio/kalte-ohren/chorus/rise.m4a",
-        "aura": "audio/kalte-ohren/chorus/aura.m4a"
+        "rhythm": "audio/kalte-ohren/chorus/rhythm.m4a",
+        "tops": "audio/kalte-ohren/chorus/tops.m4a",
+        "bass": "audio/kalte-ohren/chorus/bass.m4a",
+        "harmony": "audio/kalte-ohren/chorus/harmony.m4a",
+        "lead": "audio/kalte-ohren/chorus/lead.m4a",
+        "fx": "audio/kalte-ohren/chorus/fx.m4a"
       }
     },
     "finale": {
       "start": 160,
       "files": {
-        "pulse": "audio/kalte-ohren/finale/pulse.m4a",
-        "clap": "audio/kalte-ohren/finale/clap.m4a",
-        "spark": "audio/kalte-ohren/finale/spark.m4a",
-        "sub": "audio/kalte-ohren/finale/sub.m4a",
-        "bounce": "audio/kalte-ohren/finale/bounce.m4a",
-        "keys": "audio/kalte-ohren/finale/keys.m4a",
-        "cloud": "audio/kalte-ohren/finale/cloud.m4a",
-        "hook": "audio/kalte-ohren/finale/hook.m4a",
-        "motion": "audio/kalte-ohren/finale/motion.m4a",
-        "guitar": "audio/kalte-ohren/finale/guitar.m4a",
-        "rise": "audio/kalte-ohren/finale/rise.m4a",
-        "aura": "audio/kalte-ohren/finale/aura.m4a"
+        "rhythm": "audio/kalte-ohren/finale/rhythm.m4a",
+        "tops": "audio/kalte-ohren/finale/tops.m4a",
+        "bass": "audio/kalte-ohren/finale/bass.m4a",
+        "harmony": "audio/kalte-ohren/finale/harmony.m4a",
+        "lead": "audio/kalte-ohren/finale/lead.m4a",
+        "fx": "audio/kalte-ohren/finale/fx.m4a"
       }
     }
   },
-  "agents": [
-    "pulse",
-    "clap",
-    "spark",
-    "sub",
-    "bounce",
-    "keys",
-    "cloud",
-    "hook",
-    "motion",
-    "guitar",
-    "rise",
-    "aura"
-  ],
-  "levels": {
-    "intro": {
-      "pulse": {
-        "rms_db": -16.0,
-        "peak_db": -3.0
-      },
-      "clap": {
-        "rms_db": -34.8,
-        "peak_db": -7.8
-      },
-      "spark": {
-        "rms_db": -46.1,
-        "peak_db": -20.6
-      },
-      "sub": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "bounce": {
-        "rms_db": -17.4,
-        "peak_db": -5.9
-      },
-      "keys": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "cloud": {
-        "rms_db": -20.7,
-        "peak_db": -7.6
-      },
-      "hook": {
-        "rms_db": -24.6,
-        "peak_db": -6.1
-      },
-      "motion": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "guitar": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "rise": {
-        "rms_db": -29.5,
-        "peak_db": -9.1
-      },
-      "aura": {
-        "rms_db": -42.8,
-        "peak_db": -23.0
-      }
-    },
-    "groove": {
-      "pulse": {
-        "rms_db": -13.9,
-        "peak_db": -3.0
-      },
-      "clap": {
-        "rms_db": -27.1,
-        "peak_db": -10.0
-      },
-      "spark": {
-        "rms_db": -37.6,
-        "peak_db": -15.1
-      },
-      "sub": {
-        "rms_db": -19.4,
-        "peak_db": -10.7
-      },
-      "bounce": {
-        "rms_db": -17.3,
-        "peak_db": -4.9
-      },
-      "keys": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "cloud": {
-        "rms_db": -46.3,
-        "peak_db": -26.0
-      },
-      "hook": {
-        "rms_db": -30.2,
-        "peak_db": -12.6
-      },
-      "motion": {
-        "rms_db": -25.9,
-        "peak_db": -7.9
-      },
-      "guitar": {
-        "rms_db": -25.1,
-        "peak_db": -10.1
-      },
-      "rise": {
-        "rms_db": -28.4,
-        "peak_db": -7.5
-      },
-      "aura": {
-        "rms_db": -35.1,
-        "peak_db": -19.7
-      }
-    },
-    "drive": {
-      "pulse": {
-        "rms_db": -13.9,
-        "peak_db": -3.0
-      },
-      "clap": {
-        "rms_db": -27.0,
-        "peak_db": -10.1
-      },
-      "spark": {
-        "rms_db": -37.6,
-        "peak_db": -15.1
-      },
-      "sub": {
-        "rms_db": -19.4,
-        "peak_db": -10.7
-      },
-      "bounce": {
-        "rms_db": -17.6,
-        "peak_db": -5.1
-      },
-      "keys": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "cloud": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "hook": {
-        "rms_db": -23.5,
-        "peak_db": -8.5
-      },
-      "motion": {
-        "rms_db": -25.8,
-        "peak_db": -8.0
-      },
-      "guitar": {
-        "rms_db": -25.1,
-        "peak_db": -11.5
-      },
-      "rise": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "aura": {
-        "rms_db": -35.8,
-        "peak_db": -22.5
-      }
-    },
-    "breakdown": {
-      "pulse": {
-        "rms_db": -18.5,
-        "peak_db": -3.0
-      },
-      "clap": {
-        "rms_db": -34.8,
-        "peak_db": -7.8
-      },
-      "spark": {
-        "rms_db": -43.1,
-        "peak_db": -19.4
-      },
-      "sub": {
-        "rms_db": -46.0,
-        "peak_db": -14.4
-      },
-      "bounce": {
-        "rms_db": -43.9,
-        "peak_db": -12.2
-      },
-      "keys": {
-        "rms_db": -17.2,
-        "peak_db": -2.1
-      },
-      "cloud": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "hook": {
-        "rms_db": -19.1,
-        "peak_db": -3.1
-      },
-      "motion": {
-        "rms_db": -37.5,
-        "peak_db": -12.7
-      },
-      "guitar": {
-        "rms_db": -77.0,
-        "peak_db": -40.1
-      },
-      "rise": {
-        "rms_db": -70.7,
-        "peak_db": -49.6
-      },
-      "aura": {
-        "rms_db": -49.9,
-        "peak_db": -25.2
-      }
-    },
-    "chorus": {
-      "pulse": {
-        "rms_db": -14.1,
-        "peak_db": -2.7
-      },
-      "clap": {
-        "rms_db": -30.0,
-        "peak_db": -10.3
-      },
-      "spark": {
-        "rms_db": -38.0,
-        "peak_db": -16.5
-      },
-      "sub": {
-        "rms_db": -19.7,
-        "peak_db": -10.7
-      },
-      "bounce": {
-        "rms_db": -17.6,
-        "peak_db": -5.6
-      },
-      "keys": {
-        "rms_db": -82.1,
-        "peak_db": -48.6
-      },
-      "cloud": {
-        "rms_db": -20.6,
-        "peak_db": -4.6
-      },
-      "hook": {
-        "rms_db": -27.6,
-        "peak_db": -13.9
-      },
-      "motion": {
-        "rms_db": -28.5,
-        "peak_db": -8.6
-      },
-      "guitar": {
-        "rms_db": -25.5,
-        "peak_db": -11.2
-      },
-      "rise": {
-        "rms_db": -16.0,
-        "peak_db": 2.6
-      },
-      "aura": {
-        "rms_db": -29.5,
-        "peak_db": -6.8
-      }
-    },
-    "finale": {
-      "pulse": {
-        "rms_db": -14.1,
-        "peak_db": -3.0
-      },
-      "clap": {
-        "rms_db": -27.1,
-        "peak_db": -9.6
-      },
-      "spark": {
-        "rms_db": -38.5,
-        "peak_db": -17.6
-      },
-      "sub": {
-        "rms_db": -19.5,
-        "peak_db": -10.7
-      },
-      "bounce": {
-        "rms_db": -17.5,
-        "peak_db": -5.6
-      },
-      "keys": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "cloud": {
-        "rms_db": -20.4,
-        "peak_db": -3.3
-      },
-      "hook": {
-        "rms_db": -28.5,
-        "peak_db": -14.0
-      },
-      "motion": {
-        "rms_db": -25.8,
-        "peak_db": -7.4
-      },
-      "guitar": {
-        "rms_db": -25.0,
-        "peak_db": -11.5
-      },
-      "rise": {
-        "rms_db": -240.0,
-        "peak_db": -240.0
-      },
-      "aura": {
-        "rms_db": -35.8,
-        "peak_db": -22.1
-      }
-    }
+  "reference": "audio/kalte-ohren/reference_chorus.m4a",
+  "processing": {
+    "excluded_returns": [
+      "A-TrueVerb Stereo / Reverb return",
+      "B-Delay"
+    ],
+    "peak_ceiling_db": -6.0,
+    "master_note": "No per-stem loudness normalization; conservative bus gains preserve dynamics."
   }
 }

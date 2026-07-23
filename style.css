@@ -502,3 +502,16 @@ meter{width:100%;height:8px;margin-top:12px;accent-color:var(--blue)}
   .panel-heading{display:block}
   .panel-heading .agent-legend{margin-top:10px}
 }
+
+/* V8.1 diagnostics and extended utility controls */
+.utility-bar{flex-wrap:wrap}
+.diagnostic-panel{margin-top:13px;padding:17px}
+.diagnostic-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.diagnostic-grid>div{padding:11px;border-radius:12px;background:var(--panel-soft)}
+.diagnostic-grid span{display:block;color:var(--muted);font-size:.67rem}
+.diagnostic-grid strong{display:block;margin-top:5px;font-size:.82rem;font-variant-numeric:tabular-nums}
+.calibration-badge{padding:7px 10px;border:1px solid var(--line);border-radius:999px;color:var(--yellow);font-size:.72rem;white-space:nowrap}
+.calibration-badge.ready{color:var(--green);border-color:rgba(57,216,117,.35)}
+.calibration-badge.running{color:var(--blue);border-color:rgba(56,164,255,.35)}
+@media(max-width:900px){.diagnostic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.utility-bar{grid-template-columns:repeat(2,1fr)}.diagnostic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

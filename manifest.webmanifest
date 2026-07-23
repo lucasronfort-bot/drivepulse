@@ -1,9 +1,9 @@
 {
-  "name": "DrivePulse V8",
+  "name": "DrivePulse V8.1",
   "short_name": "DrivePulse",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#050912",
   "theme_color": "#050912",
-  "description": "Mixeur musical adaptatif à stems synchronisés selon la conduite."
+  "description": "Moteur musical adaptatif haute qualité, faible latence et fusion Motion/GPS 3D."
 }

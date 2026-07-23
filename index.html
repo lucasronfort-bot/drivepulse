@@ -4,23 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060a12">
-<title>DrivePulse V8</title>
+<title>DrivePulse V8.1</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=8.1">
 </head>
 <body>
 <main class="app-shell">
 
 <header class="topbar">
   <div class="brand-block">
-    <p class="eyebrow">Toyota C-HR · Prototype V8</p>
+    <p class="eyebrow">Toyota C-HR · Prototype V8.1</p>
     <h1>Drive<span>Pulse</span></h1>
     <p id="status" class="status"><i></i> Prêt</p>
   </div>
 
   <div class="top-actions">
     <button id="startBtn" class="primary action-button">▶ Démarrer</button>
-    <button id="calibrateBtn" class="action-button" disabled>◎ Calibrer</button>
+    <button id="calibrateBtn" class="action-button" disabled>◎ Calibration 3D</button>
     <button id="stopBtn" class="action-button danger" disabled>■ Arrêter</button>
   </div>
 </header>
@@ -60,6 +60,9 @@
 <section class="utility-bar">
   <button id="demoBtn" disabled>Simulation libre</button>
   <button id="journeyBtn" disabled>Scénario trajet complet</button>
+  <button id="qualityBtn" disabled>Mix fixe A/B</button>
+  <button id="recordBtn" disabled>Enregistrer capteurs</button>
+  <button id="downloadLogBtn" disabled>Télécharger CSV</button>
   <div class="measure-pill">
     <span>Mesure</span>
     <strong id="barLabel">1 / 8</strong>
@@ -73,7 +76,7 @@
       <div>
         <p class="section-kicker">Orchestre musical</p>
         <h2>Personnages actifs</h2>
-        <p>Chaque personnage correspond à un instrument réellement utilisé dans le morceau.</p>
+        <p>Six bus audio haute qualité regroupent les stems sans doubler les retours de délai et de réverbération.</p>
       </div>
 
       <div class="agent-legend">
@@ -258,6 +261,31 @@
   </section>
 </div>
 
+
+<section class="glass-panel diagnostic-panel">
+  <div class="panel-heading compact">
+    <div>
+      <p class="section-kicker">Diagnostic V8.1</p>
+      <h2>Fusion Motion + GPS</h2>
+      <p>Ces valeurs permettent de vérifier l’orientation du téléphone et d’exporter un journal du trajet.</p>
+    </div>
+    <strong id="calibrationState" class="calibration-badge">Non calibré</strong>
+  </div>
+
+  <div class="diagnostic-grid">
+    <div><span>Motion X</span><strong id="motionXState">0.00</strong></div>
+    <div><span>Motion Y</span><strong id="motionYState">0.00</strong></div>
+    <div><span>Motion Z</span><strong id="motionZState">0.00</strong></div>
+    <div><span>Longitudinal IMU</span><strong id="imuLongState">0.00</strong></div>
+    <div><span>Latéral IMU</span><strong id="imuLatState">0.00</strong></div>
+    <div><span>Accélération GPS</span><strong id="gpsAccelState">0.00 m/s²</strong></div>
+    <div><span>Rotation verticale</span><strong id="yawRateState">0.0 °/s</strong></div>
+    <div><span>Virage GPS</span><strong id="headingRateState">0.0 °/s</strong></div>
+    <div><span>Fréquence Motion</span><strong id="motionHzState">0 Hz</strong></div>
+    <div><span>Mode audio</span><strong id="audioModeState">Adaptatif</strong></div>
+  </div>
+</section>
+
 <footer class="safety-note">
   <strong>Sécurité :</strong> manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.<br>
   Musique adaptée de « Kalte Ohren (Cold Ears) » par starfrosch feat. Jerry Spoon — licence CC BY 3.0.
@@ -274,6 +302,6 @@
   </div>
 </div>
 
-<script src="app.js?v=8"></script>
+<script src="app.js?v=8.1"></script>
 </body>
 </html>

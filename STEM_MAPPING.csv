@@ -1,13 +1,7 @@
-﻿Personnage;Sources regroupées;Séquences;Format
-pulse;Kick (_ 3-BazzISM2);intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-clap;SNARE, RIM, SNARE-1;intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-spark;Open HH, HH FT, 16HH;intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-sub;4-fetter sub;groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-bounce;mid bass line, high bass line;intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-keys;Rhodes;breakdown;AAC 96 kb/s, 44.1 kHz, stéréo
-cloud;INTRO PAD, Omnisphere 30/31/32;intro, groove, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-hook;PLUCK ARP, Sylenth1 35/36;intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-motion;Bongo A, Percs Top, RI_M;groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-guitar;Guitar;groove, drive, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
-rise;LIFTS, Lift, Riser, Downlifter, Omnisphere transitions;intro, groove, breakdown, chorus;AAC 96 kb/s, 44.1 kHz, stéréo
-aura;B-Delay, TrueVerb / Reverb return;intro, groove, drive, breakdown, chorus, finale;AAC 96 kb/s, 44.1 kHz, stéréo
+Bus;Sources principales;Traitement;Réaction
+RHYTHM;3-BazzISM2, SNARE, RIM, SNARE-1;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps
+TOPS;Open HH, HH FT, 16HH, Bongo A, Percs Top, RI_M;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps
+BASS;fetter sub, mid bass line, high bass line;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure
+HARMONY;Rhodes, INTRO PAD, Guitar, Omnisphere 30/31/32;AAC-LC 256 kb/s, plafond -6 dB;Immédiate
+LEAD;PLUCK ARP, Sylenth1 35/36;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure
+FX;LIFTS, Lift, Riser White Noise, Downlifter;AAC-LC 256 kb/s, plafond -6 dB;Immédiate

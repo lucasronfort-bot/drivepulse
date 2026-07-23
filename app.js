@@ -3,6 +3,7 @@
 const $=id=>document.getElementById(id);
 const ui={
  status:$("status"),start:$("startBtn"),calibrate:$("calibrateBtn"),stop:$("stopBtn"),demo:$("demoBtn"),journey:$("journeyBtn"),
+ quality:$("qualityBtn"),record:$("recordBtn"),downloadLog:$("downloadLogBtn"),
  speed:$("speed"),speedMusic:$("speedMusicState"),speedMusicTrack:$("speedMusicTrack"),energy:$("energyLabel"),energyTrack:$("energyTrack"),
  section:$("sectionState"),mode:$("modeLabel"),bar:$("barLabel"),road:$("roadState"),roadHelp:$("roadModeHelp"),
  accel:$("accelMeter"),brake:$("brakeMeter"),turn:$("turnMeter"),music:$("musicMeter"),
@@ -12,14 +13,19 @@ const ui={
  idlePiano:$("idlePianoToggle"),agentGrid:$("agentGrid"),
  responsiveness:$("responsiveness"),accelSensitivity:$("accelSensitivity"),turnSensitivity:$("turnSensitivity"),
  responsivenessValue:$("responsivenessValue"),accelSensitivityValue:$("accelSensitivityValue"),turnSensitivityValue:$("turnSensitivityValue"),
- helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn")
+ helpModal:$("helpModal"),helpTitle:$("helpTitle"),helpText:$("helpText"),helpRecommendation:$("helpRecommendation"),closeHelp:$("closeHelpBtn"),
+ calibrationState:$("calibrationState"),motionX:$("motionXState"),motionY:$("motionYState"),motionZ:$("motionZState"),
+ imuLong:$("imuLongState"),imuLat:$("imuLatState"),gpsAccel:$("gpsAccelState"),yawRate:$("yawRateState"),headingRate:$("headingRateState"),
+ motionHz:$("motionHzState"),audioMode:$("audioModeState")
 };
 
 const MANIFEST_URL="audio/kalte-ohren/manifest.json";
 const BPM=120;
-const BAR_DURATION=2;
-const LOOP_DURATION=16;
-const SCHEDULE_AHEAD=1.25;
+const BEAT_DURATION=60/BPM;
+const BAR_DURATION=BEAT_DURATION*4;
+const LOOP_DURATION=BAR_DURATION*8;
+const SCHEDULE_AHEAD=.72;
+const ENGINE_INTERVAL=50;
 
 const clamp=(value,min=0,max=1)=>Math.max(min,Math.min(max,value));
 const lowPass=(oldValue,newValue,amount=.12)=>oldValue+amount*(newValue-oldValue);
@@ -27,6 +33,22 @@ const smoothstep=(edge0,edge1,value)=>{
  const x=clamp((value-edge0)/(edge1-edge0));
  return x*x*(3-2*x);
 };
+const mod=(value,divisor)=>((value%divisor)+divisor)%divisor;
+const finite=value=>Number.isFinite(Number(value))?Number(value):0;
+
+const vec=(x=0,y=0,z=0)=>({x,y,z});
+const add=(a,b)=>vec(a.x+b.x,a.y+b.y,a.z+b.z);
+const scale=(a,s)=>vec(a.x*s,a.y*s,a.z*s);
+const dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const cross=(a,b)=>vec(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x);
+const length=a=>Math.hypot(a.x,a.y,a.z);
+const normalize=(a,fallback=vec(0,0,1))=>{
+ const size=length(a);
+ return size>.0001?scale(a,1/size):fallback;
+};
+const projectToPlane=(a,normal)=>add(a,scale(normal,-dot(a,normal)));
+const meanVector=samples=>samples.length?scale(samples.reduce((sum,item)=>add(sum,item),vec()),1/samples.length):vec();
+const wrapDegrees=value=>((value+180)%360+360)%360-180;
 
 const ROAD_PROFILES={
  city:{label:"Ville",maxSpeed:50,help:"Référence 50 km/h"},
@@ -34,49 +56,60 @@ const ROAD_PROFILES={
  highway:{label:"Autoroute",maxSpeed:130,help:"Référence 130 km/h"}
 };
 
-const SEGMENT_LABELS={
- intro:"Intro",
- groove:"Groove",
- drive:"Montée",
- breakdown:"Respiration",
- chorus:"Refrain",
- finale:"Finale"
+const SCENE_LABELS={
+ intro:"Intro",groove:"Groove",drive:"Montée",breakdown:"Respiration",chorus:"Refrain",finale:"Finale"
 };
 
-const AGENTS=[
- {id:"pulse",emoji:"🥁",name:"PULSE",role:"Kick",description:"Battement principal",color:"#ff5d67"},
- {id:"clap",emoji:"👏",name:"CLAP",role:"Claps & snare",description:"Accents rythmiques",color:"#a66cff"},
- {id:"spark",emoji:"✨",name:"SPARK",role:"Hi-hat & shaker",description:"Vitesse et mouvement",color:"#ffc13d"},
- {id:"sub",emoji:"🔊",name:"SUB",role:"Basse profonde",description:"Fondations graves",color:"#25c5ff"},
- {id:"bounce",emoji:"🎸",name:"BOUNCE",role:"Basses mélodiques",description:"Groove principal",color:"#44dc72"},
- {id:"keys",emoji:"🎹",name:"KEYS",role:"Rhodes",description:"Accords et respiration",color:"#f06ec7"},
- {id:"cloud",emoji:"☁️",name:"CLOUD",role:"Pads & textures",description:"Atmosphère harmonique",color:"#36d8ea"},
- {id:"hook",emoji:"🎶",name:"HOOK",role:"Pluck & synth lead",description:"Thème mélodique",color:"#dc65d9"},
- {id:"motion",emoji:"🪘",name:"MOTION",role:"Bongos & percussions",description:"Courbes et mouvement",color:"#ffad31"},
- {id:"guitar",emoji:"🎸",name:"GUITAR",role:"Guitare",description:"Couche organique",color:"#39d98a"},
- {id:"rise",emoji:"🌊",name:"RISE",role:"Risers & impacts",description:"Transitions",color:"#a853f2"},
- {id:"aura",emoji:"◌",name:"AURA",role:"Delay & réverbération",description:"Profondeur du mix",color:"#5e9cff"}
+const BUSES=[
+ {id:"rhythm",emoji:"🥁",name:"RHYTHM",role:"Kick, snare & rim",description:"Impulsion principale",color:"#ff5d67",timing:"beat"},
+ {id:"tops",emoji:"✨",name:"TOPS",role:"Hi-hats & percussions",description:"Vitesse et virages",color:"#ffc13d",timing:"beat"},
+ {id:"bass",emoji:"🔊",name:"BASS",role:"Sub & basses mélodiques",description:"Énergie de la route",color:"#25c5ff",timing:"bar"},
+ {id:"harmony",emoji:"🎹",name:"HARMONY",role:"Rhodes, pads & guitare",description:"Corps harmonique",color:"#f06ec7",timing:"immediate"},
+ {id:"lead",emoji:"🎶",name:"LEAD",role:"Pluck & synth lead",description:"Thème mélodique",color:"#dc65d9",timing:"bar"},
+ {id:"fx",emoji:"🌊",name:"FX",role:"Risers & impacts",description:"Transitions",color:"#a853f2",timing:"immediate"}
 ];
+
+const FIXED_MIX={rhythm:.86,tops:.55,bass:.76,harmony:.74,lead:.58,fx:.34};
 
 let manifest=null;
 let running=false;
 let audioCtx=null;
 let masterGain=null;
 let masterFilter=null;
-let compressor=null;
+let masterCompressor=null;
 let schedulerTimer=null;
 let updateTimer=null;
 let watchId=null;
 let demoTimer=null;
 let journeyTimer=null;
 let generation=0;
+let fixedMixMode=false;
 
 let roadMode=localStorage.getItem("drivepulse-road-mode")||"city";
 let speedKmh=0;
+let gpsSpeedMs=0;
+let gpsAcceleration=0;
+let gpsHeadingRate=0;
 let smoothed={accel:0,brake:0,turn:0};
-let forward={x:0,y:1};
-let calibrationActive=false;
-let calibrationSamples=[];
+let rawMotion=vec();
+let linearMotion=vec();
+let imuLongitudinal=0;
+let imuLateral=0;
+let verticalYawRate=0;
+let motionFrequency=0;
+let motionEventCount=0;
+let motionFrequencyWindow=performance.now();
+let automaticSignScore=0;
+
+let sensorCalibration={
+ gravity:vec(0,1,0),
+ forward:vec(0,0,-1),
+ lateral:vec(1,0,0),
+ calibrated:false,
+ source:"Orientation par défaut"
+};
+let calibration={phase:"idle",stationary:[],drive:[],driveWeights:[],timer:null};
+
 let shortMemory=0;
 let longMemory=0;
 let stableSpeedMemory=0;
@@ -84,40 +117,43 @@ let previousSpeed=0;
 let lastMemoryUpdate=performance.now();
 let energy=0;
 let speedIntensity=0;
-let currentSegment="intro";
-let targetSegment="intro";
-let scheduledSegment="intro";
-let currentLoopStart=0;
+let currentScene="intro";
+let targetScene="intro";
+let currentPhaseStart=0;
 let nextLoopTime=0;
-let loopCounter=0;
-let lastTargetChange=0;
+let activeGroup=null;
+let pendingTransition=null;
+let nextLoopGroup=null;
+let candidateScene="intro";
+let candidateSince=0;
+let lastFinaleChoice=false;
 
-const segmentCache=new Map();
-const segmentLoads=new Map();
-const activeSources=new Set();
-const agentNodes=new Map();
-const lastAgentLevels=new Map();
+const sceneCache=new Map();
+const sceneLoads=new Map();
+const sceneAccess=new Map();
+const busNodes=new Map();
+const busRequestedLevels=new Map();
+const lastVisualLevels=new Map();
 const visualTimeouts=new Map();
+const activeGroups=new Set();
 
-function setStatus(text){
- ui.status.innerHTML=`<i></i> ${text}`;
-}
+let sensorLogging=false;
+let sensorLog=[];
+let lastLogAt=0;
+let lastGps={timestamp:0,speed:null,heading:null};
+
+function setStatus(text){ui.status.innerHTML=`<i></i> ${text}`;}
 
 function renderAgents(){
- ui.agentGrid.innerHTML=AGENTS.map((agent,index)=>`
-  <article class="agent-card" data-agent="${agent.id}" style="--agent-color:${agent.color}">
+ ui.agentGrid.innerHTML=BUSES.map((bus,index)=>`
+  <article class="agent-card" data-agent="${bus.id}" style="--agent-color:${bus.color}">
    <div class="agent-head">
-    <div class="agent-avatar">${agent.emoji}</div>
-    <div class="agent-copy">
-     <span class="agent-name">${agent.name}</span>
-     <span class="agent-role">${agent.role}</span>
-    </div>
+    <div class="agent-avatar">${bus.emoji}</div>
+    <div class="agent-copy"><span class="agent-name">${bus.name}</span><span class="agent-role">${bus.role}</span></div>
    </div>
-   <p class="agent-description">${agent.description}</p>
+   <p class="agent-description">${bus.description}</p>
    <div class="agent-status"><i></i><span>Inactif</span></div>
-   <div class="agent-meter" aria-hidden="true">
-    ${Array.from({length:14},(_,i)=>`<i style="animation-delay:-${((i*.09)+(index*.03)).toFixed(2)}s"></i>`).join("")}
-   </div>
+   <div class="agent-meter" aria-hidden="true">${Array.from({length:14},(_,i)=>`<i style="animation-delay:-${((i*.09)+(index*.03)).toFixed(2)}s"></i>`).join("")}</div>
   </article>`).join("");
 }
 
@@ -131,24 +167,21 @@ function setAgentVisualState(id,state){
 }
 
 function updateAgentVisual(id,level){
- const previous=lastAgentLevels.get(id)||0;
- const wasActive=previous>.06;
- const isActive=level>.06;
- lastAgentLevels.set(id,level);
-
+ const previous=lastVisualLevels.get(id)||0;
+ const wasActive=previous>.055;
+ const isActive=level>.055;
+ lastVisualLevels.set(id,level);
  if(wasActive!==isActive){
   setAgentVisualState(id,"transition");
   if(visualTimeouts.has(id))clearTimeout(visualTimeouts.get(id));
-  visualTimeouts.set(id,setTimeout(()=>setAgentVisualState(id,isActive?"active":"inactive"),380));
- }else{
-  setAgentVisualState(id,isActive?"active":"inactive");
- }
+  visualTimeouts.set(id,setTimeout(()=>setAgentVisualState(id,isActive?"active":"inactive"),220));
+ }else setAgentVisualState(id,isActive?"active":"inactive");
 }
 
 async function loadManifest(){
  if(manifest)return manifest;
  const response=await fetch(MANIFEST_URL,{cache:"no-cache"});
- if(!response.ok)throw new Error("Manifest audio introuvable.");
+ if(!response.ok)throw new Error("Manifest audio V8.1 introuvable.");
  manifest=await response.json();
  return manifest;
 }
@@ -156,174 +189,276 @@ async function loadManifest(){
 function createAudioGraph(){
  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
  if(!AudioContextClass)throw new Error("Web Audio API indisponible.");
- audioCtx=new AudioContextClass();
+ try{audioCtx=new AudioContextClass({latencyHint:"interactive",sampleRate:44100});}
+ catch{audioCtx=new AudioContextClass();}
+
  masterGain=audioCtx.createGain();
  masterFilter=audioCtx.createBiquadFilter();
- compressor=audioCtx.createDynamicsCompressor();
-
- masterGain.gain.value=.76;
+ masterCompressor=audioCtx.createDynamicsCompressor();
+ masterGain.gain.value=.88;
  masterFilter.type="lowpass";
- masterFilter.frequency.value=18000;
- masterFilter.Q.value=.65;
- compressor.threshold.value=-8;
- compressor.knee.value=14;
- compressor.ratio.value=3;
- compressor.attack.value=.004;
- compressor.release.value=.22;
+ masterFilter.frequency.value=19000;
+ masterFilter.Q.value=.55;
+ masterCompressor.threshold.value=-4;
+ masterCompressor.knee.value=3;
+ masterCompressor.ratio.value=4;
+ masterCompressor.attack.value=.008;
+ masterCompressor.release.value=.12;
+ masterGain.connect(masterFilter).connect(masterCompressor).connect(audioCtx.destination);
 
- masterGain.connect(masterFilter).connect(compressor).connect(audioCtx.destination);
-
- AGENTS.forEach(agent=>{
+ BUSES.forEach(bus=>{
   const gain=audioCtx.createGain();
   gain.gain.value=0;
   gain.connect(masterGain);
-  agentNodes.set(agent.id,gain);
-  lastAgentLevels.set(agent.id,0);
+  busNodes.set(bus.id,gain);
+  busRequestedLevels.set(bus.id,0);
+  lastVisualLevels.set(bus.id,0);
  });
 }
 
 async function decodeAudio(url){
- const response=await fetch(url);
+ const response=await fetch(url,{cache:"force-cache"});
  if(!response.ok)throw new Error(`Audio introuvable : ${url}`);
  const arrayBuffer=await response.arrayBuffer();
  return audioCtx.decodeAudioData(arrayBuffer);
 }
 
-async function loadSegment(name){
- if(segmentCache.has(name))return segmentCache.get(name);
- if(segmentLoads.has(name))return segmentLoads.get(name);
+function estimateBufferDb(buffer){
+ let sum=0,count=0;
+ const stride=512;
+ for(let channel=0;channel<buffer.numberOfChannels;channel++){
+  const data=buffer.getChannelData(channel);
+  for(let index=0;index<data.length;index+=stride){sum+=data[index]*data[index];count++;}
+ }
+ if(!count)return -120;
+ const rms=Math.sqrt(sum/count);
+ return rms>1e-7?20*Math.log10(rms):-120;
+}
 
- const loadPromise=(async()=>{
-  const segment=manifest.segments[name];
-  if(!segment)throw new Error(`Séquence inconnue : ${name}`);
-  const entries=await Promise.all(AGENTS.map(async agent=>{
-   const url=segment.files[agent.id];
-   return [agent.id,await decodeAudio(url)];
+async function loadScene(name){
+ if(sceneCache.has(name)){
+  sceneAccess.set(name,performance.now());
+  return sceneCache.get(name);
+ }
+ if(sceneLoads.has(name))return sceneLoads.get(name);
+ const promise=(async()=>{
+  const scene=manifest.scenes[name];
+  if(!scene)throw new Error(`Scène inconnue : ${name}`);
+  const entries=await Promise.all(BUSES.map(async bus=>{
+   const buffer=await decodeAudio(scene.files[bus.id]);
+   return [bus.id,{buffer,rmsDb:estimateBufferDb(buffer)}];
   }));
-  const buffers=new Map(entries);
-  segmentCache.set(name,buffers);
-  segmentLoads.delete(name);
-  return buffers;
- })().catch(error=>{
-  segmentLoads.delete(name);
-  throw error;
- });
-
- segmentLoads.set(name,loadPromise);
- return loadPromise;
+  const data=new Map(entries);
+  sceneCache.set(name,data);
+  sceneAccess.set(name,performance.now());
+  sceneLoads.delete(name);
+  pruneSceneCache();
+  return data;
+ })().catch(error=>{sceneLoads.delete(name);throw error;});
+ sceneLoads.set(name,promise);
+ return promise;
 }
 
-function pruneSegmentCache(){
- for(const name of [...segmentCache.keys()]){
-  if(name!==currentSegment&&name!==targetSegment&&name!==scheduledSegment){
-   segmentCache.delete(name);
-  }
+function pruneSceneCache(){
+ const protectedScenes=new Set([currentScene,targetScene,pendingTransition?.scene,nextLoopGroup?.scene].filter(Boolean));
+ const candidates=[...sceneCache.keys()].filter(name=>!protectedScenes.has(name));
+ while(sceneCache.size>3&&candidates.length){
+  candidates.sort((a,b)=>(sceneAccess.get(a)||0)-(sceneAccess.get(b)||0));
+  const oldest=candidates.shift();
+  sceneCache.delete(oldest);
+  sceneAccess.delete(oldest);
  }
 }
 
-function segmentAvailability(segment,agent){
- const db=manifest?.levels?.[segment]?.[agent]?.rms_db??-240;
- if(db<=-90)return 0;
- return clamp((db+75)/35);
+async function prefetchAllAudio(){
+ if(!manifest)return;
+ const urls=[];
+ Object.values(manifest.scenes).forEach(scene=>Object.values(scene.files).forEach(url=>urls.push(url)));
+ for(const url of urls){
+  if(!running)return;
+  try{await fetch(url,{cache:"force-cache"});}catch{}
+ }
 }
 
-function desiredAgentLevels(){
- const e=energy;
- const stopped=speedKmh<4;
- const turning=smoothed.turn;
- const transitioning=targetSegment!==currentSegment;
-
- return {
-  pulse:smoothstep(.12,.34,e),
-  clap:smoothstep(.20,.43,e),
-  spark:smoothstep(.28,.58,e),
-  sub:smoothstep(.10,.30,e),
-  bounce:smoothstep(.22,.48,e),
-  keys:stopped&&ui.idlePiano.checked?1:.54*(1-e)+.12,
-  cloud:.78-.28*e,
-  hook:smoothstep(.38,.67,e),
-  motion:clamp(Math.max(smoothstep(.42,.70,e)*.68,turning*1.5,roadMode==="country"?.36:0)),
-  guitar:smoothstep(.32,.58,e),
-  rise:transitioning?1:clamp(smoothed.accel*1.25+smoothed.brake*.75),
-  aura:.48+.28*(1-e)
- };
+function sceneSignal(scene,bus){
+ const db=sceneCache.get(scene)?.get(bus)?.rmsDb??-120;
+ return db>-68?1:0;
 }
 
-function applyAgentMix(){
- if(!audioCtx)return;
- const desired=desiredAgentLevels();
- const now=audioCtx.currentTime;
-
- AGENTS.forEach(agent=>{
-  const availability=segmentAvailability(currentSegment,agent.id);
-  let level=clamp(desired[agent.id]*availability);
-  if(!ui.idlePiano.checked&&speedKmh<4&&["keys","cloud","aura"].includes(agent.id))level=0;
-  const node=agentNodes.get(agent.id);
-  node.gain.cancelScheduledValues(now);
-  node.gain.setTargetAtTime(level,now,.22);
-  updateAgentVisual(agent.id,level);
- });
-
- const brake=smoothed.brake;
- const cutoff=brake>.08?1200+(1-brake)*7200:9000+energy*9000;
- masterFilter.frequency.setTargetAtTime(cutoff,now,.12);
- masterGain.gain.setTargetAtTime(brake>.45?.58:.78,now,.14);
-}
-
-function scheduleSegment(name,when){
- const buffers=segmentCache.get(name);
- if(!buffers)return false;
- const token=generation;
- const changed=name!==scheduledSegment;
-
- AGENTS.forEach(agent=>{
-  const buffer=buffers.get(agent.id);
-  if(!buffer)return;
+function startSceneGroup(scene,when,offset=0,fadeIn=.055){
+ const data=sceneCache.get(scene);
+ if(!data)return null;
+ const duration=Math.max(.05,LOOP_DURATION-offset);
+ const group={scene,when,offset,end:when+duration,sources:[],sourceGains:[],stopped:false};
+ BUSES.forEach(bus=>{
+  const entry=data.get(bus.id);
+  if(!entry)return;
   const source=audioCtx.createBufferSource();
-  source.buffer=buffer;
-  source.connect(agentNodes.get(agent.id));
-  source.start(when,0,LOOP_DURATION);
-  source.stop(when+LOOP_DURATION+.04);
-  activeSources.add(source);
-  source.onended=()=>activeSources.delete(source);
+  const sourceGain=audioCtx.createGain();
+  source.buffer=entry.buffer;
+  if(fadeIn>0){
+   sourceGain.gain.setValueAtTime(0,when);
+   sourceGain.gain.linearRampToValueAtTime(1,when+fadeIn);
+  }else sourceGain.gain.setValueAtTime(1,when);
+  source.connect(sourceGain).connect(busNodes.get(bus.id));
+  const available=Math.max(.03,Math.min(duration,entry.buffer.duration-offset));
+  source.start(when,offset,available);
+  source.stop(when+available+.04);
+  group.sources.push(source);
+  group.sourceGains.push(sourceGain);
  });
+ activeGroups.add(group);
+ const cleanupDelay=Math.max(0,(group.end-audioCtx.currentTime+.2)*1000);
+ setTimeout(()=>activeGroups.delete(group),cleanupDelay);
+ return group;
+}
 
- if(changed){
-  const transitionStart=Math.max(audioCtx.currentTime,when-.35);
-  masterFilter.frequency.cancelScheduledValues(transitionStart);
-  masterFilter.frequency.setValueAtTime(masterFilter.frequency.value,transitionStart);
-  masterFilter.frequency.exponentialRampToValueAtTime(1800,when);
-  masterFilter.frequency.exponentialRampToValueAtTime(15000,when+.65);
+function fadeOutGroup(group,when,duration=.055){
+ if(!group||group.stopped)return;
+ group.sourceGains.forEach(gain=>{
+  gain.gain.cancelScheduledValues(when);
+  gain.gain.setValueAtTime(gain.gain.value,when);
+  gain.gain.linearRampToValueAtTime(0,when+duration);
+ });
+ group.sources.forEach(source=>{try{source.stop(when+duration+.025);}catch{}});
+ group.stopped=true;
+}
+
+function cancelFutureGroup(group){
+ if(!group)return;
+ group.sources.forEach(source=>{try{source.stop();}catch{}});
+ group.sourceGains.forEach(node=>{try{node.disconnect();}catch{}});
+ group.stopped=true;
+ activeGroups.delete(group);
+}
+
+function nextGridTime(step,minimumTime=audioCtx.currentTime+.06){
+ const elapsed=minimumTime-currentPhaseStart;
+ return currentPhaseStart+Math.ceil(elapsed/step)*step;
+}
+
+function commitSceneAt(scene,group,phaseStart){
+ currentScene=scene;
+ activeGroup=group;
+ currentPhaseStart=phaseStart;
+ updateSectionTimeline();
+ pruneSceneCache();
+ warmLikelyScenes();
+}
+
+function scheduleTransitionIfReady(){
+ if(!running||fixedMixMode&&targetScene!=="chorus")return;
+ if(targetScene===currentScene||pendingTransition||!sceneCache.has(targetScene))return;
+ const now=audioCtx.currentTime;
+ const boundary=nextGridTime(BAR_DURATION,now+.12);
+
+ if(boundary>=nextLoopTime-.045){
+  if(nextLoopGroup&&nextLoopGroup.scene!==targetScene&&now<nextLoopGroup.when-.035){
+   cancelFutureGroup(nextLoopGroup.group);
+   nextLoopGroup=null;
+  }
+  return;
  }
 
- scheduledSegment=name;
- const delay=Math.max(0,(when-audioCtx.currentTime)*1000);
+ const offset=mod(boundary-currentPhaseStart,LOOP_DURATION);
+ const transitionScene=targetScene;
+ const group=startSceneGroup(transitionScene,boundary,offset,.065);
+ if(!group)return;
+ fadeOutGroup(activeGroup,boundary,.065);
+ pendingTransition={scene:transitionScene,when:boundary,offset,group};
  setTimeout(()=>{
-  if(!running||token!==generation)return;
-  currentSegment=name;
-  currentLoopStart=when;
-  loopCounter++;
-  updateSectionTimeline();
-  applyAgentMix();
-  pruneSegmentCache();
- },delay);
- return true;
+  if(!running||pendingTransition?.group!==group)return;
+  commitSceneAt(transitionScene,group,boundary-offset);
+  pendingTransition=null;
+  applyBusMix(true);
+ },Math.max(0,(boundary-audioCtx.currentTime)*1000));
 }
 
 function scheduler(){
  if(!running||!audioCtx)return;
- while(nextLoopTime<audioCtx.currentTime+SCHEDULE_AHEAD){
-  let chosen=segmentCache.has(targetSegment)?targetSegment:currentSegment;
-  if(!segmentCache.has(chosen))chosen="intro";
-  if(!scheduleSegment(chosen,nextLoopTime))break;
-  nextLoopTime+=LOOP_DURATION;
+ const now=audioCtx.currentTime;
+ scheduleTransitionIfReady();
+
+ if(nextLoopGroup&&now>=nextLoopGroup.when-.012){
+  const item=nextLoopGroup;
+  nextLoopGroup=null;
+  commitSceneAt(item.scene,item.group,item.when);
+  nextLoopTime=item.when+LOOP_DURATION;
+  applyBusMix(true);
+ }
+
+ if(!nextLoopGroup&&nextLoopTime<now+SCHEDULE_AHEAD){
+  let scene=currentScene;
+  if(sceneCache.has(targetScene))scene=targetScene;
+  if(pendingTransition)scene=pendingTransition.scene;
+  const group=startSceneGroup(scene,nextLoopTime,0,.012);
+  if(group)nextLoopGroup={scene,when:nextLoopTime,group};
  }
 }
 
-function requestTargetSegment(name){
- if(!manifest?.segments?.[name])return;
- targetSegment=name;
- loadSegment(name).catch(error=>setStatus(error.message||"Chargement audio impossible."));
+function requestTargetScene(name){
+ if(!manifest?.scenes?.[name])return;
+ targetScene=name;
+ loadScene(name).then(()=>scheduleTransitionIfReady()).catch(error=>setStatus(error.message||"Chargement audio impossible."));
+}
+
+function warmLikelyScenes(){
+ const choices={intro:["groove"],groove:["drive","breakdown"],drive:["chorus","breakdown"],breakdown:["groove","drive"],chorus:["finale","breakdown"],finale:["breakdown","groove"]}[currentScene]||[];
+ choices.slice(0,2).forEach(name=>loadScene(name).catch(()=>{}));
+}
+
+function desiredBusLevels(){
+ if(fixedMixMode)return {...FIXED_MIX};
+ const e=energy;
+ const stopped=speedKmh<4;
+ const accel=smoothed.accel;
+ const brake=smoothed.brake;
+ const turn=smoothed.turn;
+ return {
+  rhythm:clamp(smoothstep(.10,.36,e)*(.90-brake*.72),0,.90),
+  tops:clamp(Math.max(smoothstep(.27,.60,e)*.62,accel*.62,turn*.58),0,.68),
+  bass:clamp(smoothstep(.12,.40,e)*.78,0,.78),
+  harmony:stopped&&ui.idlePiano.checked?.78:clamp(.72-.16*e,0,.72),
+  lead:clamp(smoothstep(.40,.72,e)*.64,0,.64),
+  fx:clamp(.07+accel*.42+brake*.36+(targetScene!==currentScene?.20:0),0,.42)
+ };
+}
+
+function scheduleBusLevel(bus,level,force=false){
+ const node=busNodes.get(bus.id);
+ if(!node||!audioCtx)return;
+ const previous=busRequestedLevels.get(bus.id)||0;
+ if(!force&&Math.abs(level-previous)<.025)return;
+ busRequestedLevels.set(bus.id,level);
+ const now=audioCtx.currentTime;
+ node.gain.cancelScheduledValues(now);
+ node.gain.setValueAtTime(node.gain.value,now);
+ if(bus.timing==="immediate")node.gain.setTargetAtTime(level,now,.038);
+ else{
+  const grid=bus.timing==="beat"?BEAT_DURATION:BAR_DURATION;
+  const when=nextGridTime(grid,now+.035);
+  node.gain.setValueAtTime(node.gain.value,when);
+  node.gain.linearRampToValueAtTime(level,when+.055);
+ }
+}
+
+function applyBusMix(force=false){
+ if(!audioCtx)return;
+ const desired=desiredBusLevels();
+ const availabilityScene=pendingTransition?.scene||currentScene;
+ BUSES.forEach(bus=>{
+  const signal=Math.max(sceneSignal(currentScene,bus.id),pendingTransition?sceneSignal(pendingTransition.scene,bus.id):0);
+  let level=desired[bus.id]*(signal?1:0);
+  if(!ui.idlePiano.checked&&speedKmh<4)level=0;
+  scheduleBusLevel(bus,level,force);
+  updateAgentVisual(bus.id,level);
+ });
+
+ const now=audioCtx.currentTime;
+ const brake=smoothed.brake;
+ const cutoff=fixedMixMode?19000:brake>.04?900+(1-brake)*6800:10500+energy*8500+smoothed.accel*1800;
+ masterFilter.frequency.setTargetAtTime(clamp(cutoff,650,19500),now,.045);
+ masterGain.gain.setTargetAtTime(fixedMixMode?.88:brake>.58?.68:.88,now,.055);
 }
 
 function updateDrivingMemory(){
@@ -332,96 +467,117 @@ function updateDrivingMemory(){
  lastMemoryUpdate=now;
  const profile=ROAD_PROFILES[roadMode];
  speedIntensity=clamp(speedKmh/profile.maxSpeed);
- const immediate=clamp(speedIntensity*.62+smoothed.accel*.22+smoothed.turn*.12-smoothed.brake*.20);
- shortMemory=lowPass(shortMemory,immediate,Math.min(.42,dt*.38));
- longMemory=lowPass(longMemory,shortMemory,Math.min(.09,dt*.045));
+ const immediate=clamp(speedIntensity*.57+smoothed.accel*.26+smoothed.turn*.12-smoothed.brake*.18);
+ shortMemory=lowPass(shortMemory,immediate,Math.min(.52,dt*.72));
+ longMemory=lowPass(longMemory,shortMemory,Math.min(.12,dt*.065));
  const speedDelta=Math.abs(speedKmh-previousSpeed);
- const stable=speedKmh>8&&speedDelta<2.4&&smoothed.accel<.18&&smoothed.brake<.18?1:0;
- stableSpeedMemory=lowPass(stableSpeedMemory,stable,Math.min(.22,dt*.11));
+ const stable=speedKmh>8&&speedDelta<2.8&&smoothed.accel<.20&&smoothed.brake<.20?1:0;
+ stableSpeedMemory=lowPass(stableSpeedMemory,stable,Math.min(.28,dt*.18));
  previousSpeed=speedKmh;
- energy=clamp(speedIntensity*.58+shortMemory*.18+longMemory*.12+smoothed.accel*.15+smoothed.turn*.08-smoothed.brake*.14);
+ energy=clamp(speedIntensity*.54+shortMemory*.19+longMemory*.11+smoothed.accel*.20+smoothed.turn*.08-smoothed.brake*.13);
 }
 
-function evaluateTargetSegment(){
- if(smoothed.brake>.48)return "breakdown";
+function evaluateScene(){
+ if(fixedMixMode)return "chorus";
+ if(smoothed.brake>.36)return "breakdown";
  if(speedKmh<4)return ui.idlePiano.checked?"intro":"groove";
- if(speedIntensity>.78&&longMemory>.55)return loopCounter%2===0?"chorus":"finale";
- if(smoothed.accel>.34||shortMemory>.57)return "drive";
- if(speedIntensity>.34||stableSpeedMemory>.42)return "groove";
+ if(speedIntensity>.74&&longMemory>.45)return longMemory>.70?"finale":"chorus";
+ if(smoothed.accel>.24||shortMemory>.54)return "drive";
+ if(speedIntensity>.27||stableSpeedMemory>.34)return "groove";
  return "intro";
 }
 
 function maybeUpdateTarget(){
- const candidate=evaluateTargetSegment();
+ const candidate=evaluateScene();
  const now=performance.now();
- const holdTime=3200/Math.max(.5,Number(ui.responsiveness.value));
- if(candidate!==targetSegment&&now-lastTargetChange>holdTime){
-  lastTargetChange=now;
-  requestTargetSegment(candidate);
- }
+ if(candidate!==candidateScene){candidateScene=candidate;candidateSince=now;return;}
+ const responsiveness=Math.max(.5,Number(ui.responsiveness.value));
+ const hold=candidate==="breakdown"?70:candidate==="drive"?220/responsiveness:420/responsiveness;
+ if(candidate!==targetScene&&now-candidateSince>=hold)requestTargetScene(candidate);
 }
 
 function updateSectionTimeline(){
- document.querySelectorAll("[data-section]").forEach(node=>{
-  node.classList.toggle("current",node.dataset.section===currentSegment);
- });
+ document.querySelectorAll("[data-section]").forEach(node=>node.classList.toggle("current",node.dataset.section===currentScene));
 }
 
 function modeLabel(){
- if(smoothed.brake>.42)return "Brake";
- if(energy>.72)return "Boost";
- if(smoothed.turn>.42)return "Curve";
- if(energy>.36)return "Drive";
+ if(fixedMixMode)return "Mix fixe";
+ if(smoothed.brake>.36)return "Brake";
+ if(energy>.70)return "Boost";
+ if(smoothed.turn>.34)return "Curve";
+ if(energy>.34)return "Drive";
  return "Cruise";
+}
+
+function updateCalibrationBadge(){
+ const phase=calibration.phase;
+ ui.calibrationState.classList.toggle("running",phase!=="idle");
+ ui.calibrationState.classList.toggle("ready",phase==="idle"&&sensorCalibration.calibrated);
+ if(phase==="stationary")ui.calibrationState.textContent="Étape 1/2 : immobile";
+ else if(phase==="drive")ui.calibrationState.textContent="Étape 2/2 : ligne droite";
+ else ui.calibrationState.textContent=sensorCalibration.calibrated?"Calibration 3D prête":"Orientation par défaut";
 }
 
 function updateUi(){
  const profile=ROAD_PROFILES[roadMode];
- const barPosition=audioCtx&&running?Math.floor((((audioCtx.currentTime-currentLoopStart)%LOOP_DURATION)+LOOP_DURATION)%LOOP_DURATION/BAR_DURATION)+1:1;
- const levels=desiredAgentLevels();
- const drums=[levels.pulse,levels.clap,levels.spark].filter(v=>v>.35).length;
- const bassLevel=Math.max(levels.sub,levels.bounce);
-
+ const now=audioCtx&&running?audioCtx.currentTime:currentPhaseStart;
+ const barPosition=running?Math.floor(mod(now-currentPhaseStart,LOOP_DURATION)/BAR_DURATION)+1:1;
+ const levels=desiredBusLevels();
  ui.speed.textContent=Math.round(speedKmh);
  ui.speedMusic.textContent=`${Math.round(speedIntensity*100)}%`;
  ui.speedMusicTrack.style.width=`${Math.round(speedIntensity*100)}%`;
  ui.energy.textContent=`${Math.round(energy*100)}%`;
  ui.energyTrack.style.width=`${Math.round(energy*100)}%`;
- ui.section.textContent=SEGMENT_LABELS[currentSegment];
+ ui.section.textContent=SCENE_LABELS[currentScene];
  ui.mode.textContent=modeLabel();
  ui.bar.textContent=`${barPosition} / 8`;
  ui.road.textContent=profile.label;
  ui.roadHelp.textContent=profile.help;
 
- ui.accel.value=smoothed.accel;
- ui.brake.value=smoothed.brake;
- ui.turn.value=smoothed.turn;
- ui.music.value=energy;
- ui.accelValue.value=smoothed.accel.toFixed(2);
- ui.brakeValue.value=smoothed.brake.toFixed(2);
- ui.turnValue.value=smoothed.turn.toFixed(2);
- ui.musicValue.value=energy.toFixed(2);
+ ui.accel.value=smoothed.accel;ui.brake.value=smoothed.brake;ui.turn.value=smoothed.turn;ui.music.value=energy;
+ ui.accelValue.value=smoothed.accel.toFixed(2);ui.brakeValue.value=smoothed.brake.toFixed(2);ui.turnValue.value=smoothed.turn.toFixed(2);ui.musicValue.value=energy.toFixed(2);
+ ui.shortMemory.textContent=`${Math.round(shortMemory*100)}%`;ui.longMemory.textContent=`${Math.round(longMemory*100)}%`;
+ ui.shortMemoryMeter.value=shortMemory;ui.longMemoryMeter.value=longMemory;
 
- ui.shortMemory.textContent=`${Math.round(shortMemory*100)}%`;
- ui.longMemory.textContent=`${Math.round(longMemory*100)}%`;
- ui.shortMemoryMeter.value=shortMemory;
- ui.longMemoryMeter.value=longMemory;
+ ui.chord.textContent="Kalte Ohren · HQ";
+ ui.bass.textContent=levels.bass>.58?"Pleine":levels.bass>.22?"Active":"Légère";
+ ui.drum.textContent=levels.rhythm>.65?"Complète":levels.rhythm>.20?"Progressive":"Réduite";
+ ui.arp.textContent=levels.lead>.46?"Présent":levels.lead>.08?"Discret":"Retiré";
+ ui.filter.textContent=smoothed.brake>.18?"Fermé":"Ouvert";
+ ui.variation.textContent=SCENE_LABELS[targetScene];
+ ui.idle.textContent=ui.idlePiano.checked?"Ambiance active":"Silence à l’arrêt";
 
- ui.chord.textContent="Kalte Ohren";
- ui.bass.textContent=bassLevel>.68?"Pleine":bassLevel>.28?"Active":"Légère";
- ui.drum.textContent=drums>=3?"Complète":drums>=1?"Progressive":"Réduite";
- ui.arp.textContent=levels.hook>.55?"Présent":levels.hook>.12?"Discret":"Retiré";
- ui.filter.textContent=smoothed.brake>.20?"Fermé":"Ouvert";
- ui.variation.textContent=SEGMENT_LABELS[targetSegment];
- ui.idle.textContent=ui.idlePiano.checked?"Stems doux":"Silence à l’arrêt";
+ ui.motionX.textContent=rawMotion.x.toFixed(2);ui.motionY.textContent=rawMotion.y.toFixed(2);ui.motionZ.textContent=rawMotion.z.toFixed(2);
+ ui.imuLong.textContent=imuLongitudinal.toFixed(2);ui.imuLat.textContent=imuLateral.toFixed(2);
+ ui.gpsAccel.textContent=`${gpsAcceleration.toFixed(2)} m/s²`;ui.yawRate.textContent=`${verticalYawRate.toFixed(1)} °/s`;ui.headingRate.textContent=`${gpsHeadingRate.toFixed(1)} °/s`;
+ ui.motionHz.textContent=`${motionFrequency.toFixed(0)} Hz`;ui.audioMode.textContent=fixedMixMode?"Mix fixe":"Adaptatif low latency";
+ updateCalibrationBadge();
+}
+
+function maybeLogSensors(){
+ if(!sensorLogging)return;
+ const now=performance.now();
+ if(now-lastLogAt<200)return;
+ lastLogAt=now;
+ sensorLog.push({
+  iso:new Date().toISOString(),elapsed_ms:Math.round(now),road_mode:roadMode,scene:currentScene,target_scene:targetScene,
+  speed_kmh:speedKmh.toFixed(2),gps_accel_ms2:gpsAcceleration.toFixed(3),gps_heading_rate_dps:gpsHeadingRate.toFixed(3),
+  motion_x:rawMotion.x.toFixed(4),motion_y:rawMotion.y.toFixed(4),motion_z:rawMotion.z.toFixed(4),
+  imu_longitudinal:imuLongitudinal.toFixed(4),imu_lateral:imuLateral.toFixed(4),yaw_rate_dps:verticalYawRate.toFixed(3),
+  accel_signal:smoothed.accel.toFixed(4),brake_signal:smoothed.brake.toFixed(4),turn_signal:smoothed.turn.toFixed(4),
+  energy:energy.toFixed(4),motion_hz:motionFrequency.toFixed(1),calibrated:sensorCalibration.calibrated?1:0
+ });
+ if(sensorLog.length>24000)sensorLog.shift();
+ ui.downloadLog.disabled=sensorLog.length===0;
 }
 
 function updateEngine(){
  if(!running)return;
  updateDrivingMemory();
  maybeUpdateTarget();
- applyAgentMix();
+ applyBusMix();
  updateUi();
+ maybeLogSensors();
 }
 
 async function requestMotionPermission(){
@@ -432,102 +588,185 @@ async function requestMotionPermission(){
    if(result!=="granted")return false;
   }
   return true;
- }catch{
-  return false;
+ }catch{return false;}
+}
+
+function loadSavedCalibration(){
+ try{
+  const saved=JSON.parse(localStorage.getItem("drivepulse-calibration-3d")||"null");
+  if(saved?.gravity&&saved?.forward&&saved?.lateral){
+   sensorCalibration={gravity:normalize(saved.gravity),forward:normalize(saved.forward),lateral:normalize(saved.lateral),calibrated:true,source:"Calibration enregistrée"};
+  }
+ }catch{}
+}
+
+function saveCalibration(){
+ localStorage.setItem("drivepulse-calibration-3d",JSON.stringify(sensorCalibration));
+}
+
+function calculateLinearAcceleration(event){
+ const acceleration=event.acceleration;
+ if(acceleration&&[acceleration.x,acceleration.y,acceleration.z].some(value=>value!==null&&Number.isFinite(Number(value)))){
+  return vec(finite(acceleration.x),finite(acceleration.y),finite(acceleration.z));
  }
+ const including=event.accelerationIncludingGravity;
+ if(!including)return vec();
+ return add(vec(finite(including.x),finite(including.y),finite(including.z)),scale(sensorCalibration.gravity,-9.80665));
 }
 
 function handleMotion(event){
  if(!running||demoTimer||journeyTimer)return;
- const acceleration=event.acceleration||event.accelerationIncludingGravity;
- if(!acceleration)return;
- const x=Number(acceleration.x||0);
- const y=Number(acceleration.y||0);
- const rotation=event.rotationRate||{};
- const yaw=Math.abs(Number(rotation.alpha||0));
-
- if(calibrationActive){
-  const magnitude=Math.hypot(x,y);
-  if(magnitude>.25)calibrationSamples.push({x,y});
-  if(calibrationSamples.length>=35)finishCalibration();
+ motionEventCount++;
+ const now=performance.now();
+ if(now-motionFrequencyWindow>=1000){
+  motionFrequency=motionEventCount*1000/(now-motionFrequencyWindow);
+  motionEventCount=0;motionFrequencyWindow=now;
  }
 
- const longitudinal=x*forward.x+y*forward.y;
- const lateral=Math.abs(x*-forward.y+y*forward.x);
- const accelerationSensitivity=Number(ui.accelSensitivity.value);
+ const including=event.accelerationIncludingGravity;
+ const includingVector=including?vec(finite(including.x),finite(including.y),finite(including.z)):vec();
+ linearMotion=calculateLinearAcceleration(event);
+ rawMotion=linearMotion;
+
+ if(calibration.phase==="stationary"&&including)calibration.stationary.push(includingVector);
+ if(calibration.phase==="drive"){
+  const magnitude=length(linearMotion);
+  if(magnitude>.045){
+   calibration.drive.push(linearMotion);
+   calibration.driveWeights.push(Math.max(.15,clamp(gpsAcceleration/1.5),clamp(magnitude/2)));
+  }
+ }
+
+ imuLongitudinal=dot(linearMotion,sensorCalibration.forward);
+ imuLateral=dot(linearMotion,sensorCalibration.lateral);
+ const rotation=event.rotationRate||{};
+ const angular=vec(finite(rotation.beta),finite(rotation.gamma),finite(rotation.alpha));
+ verticalYawRate=Math.abs(dot(angular,sensorCalibration.gravity));
+
+ if(gpsAcceleration>.25&&Math.abs(imuLongitudinal)>.05&&sensorCalibration.calibrated){
+  automaticSignScore=lowPass(automaticSignScore,Math.sign(gpsAcceleration*imuLongitudinal),.035);
+  if(automaticSignScore<-.68){
+   sensorCalibration.forward=scale(sensorCalibration.forward,-1);
+   sensorCalibration.lateral=scale(sensorCalibration.lateral,-1);
+   automaticSignScore=0;
+   saveCalibration();
+   setStatus("Sens de l’axe avant corrigé automatiquement.");
+  }
+ }
+
+ const accelSensitivity=Number(ui.accelSensitivity.value);
  const turnSensitivity=Number(ui.turnSensitivity.value);
- smoothed.accel=lowPass(smoothed.accel,clamp(((longitudinal-.08)/1.8)*accelerationSensitivity));
- smoothed.brake=lowPass(smoothed.brake,clamp(((-longitudinal-.08)/1.8)*accelerationSensitivity));
- smoothed.turn=lowPass(smoothed.turn,clamp(Math.max(lateral/2.2,yaw/75)*turnSensitivity));
+ const imuPositive=Math.max(0,imuLongitudinal)/2.25;
+ const imuNegative=Math.max(0,-imuLongitudinal)/2.25;
+ const gpsPositive=Math.max(0,gpsAcceleration)/2.0;
+ const gpsNegative=Math.max(0,-gpsAcceleration)/2.2;
+ const accelerationTarget=clamp(Math.max(imuPositive*.74+gpsPositive*.26,gpsPositive*.78)*accelSensitivity);
+ const brakeTarget=clamp(Math.max(imuNegative*.72+gpsNegative*.28,gpsNegative*.82)*accelSensitivity);
+ const turnTarget=clamp(Math.max(Math.abs(imuLateral)/2.5*.72,verticalYawRate/45*.68,gpsHeadingRate/34*.82)*turnSensitivity);
+ smoothed.accel=lowPass(smoothed.accel,accelerationTarget,.24);
+ smoothed.brake=lowPass(smoothed.brake,brakeTarget,.24);
+ smoothed.turn=lowPass(smoothed.turn,turnTarget,.23);
 }
 
 function beginCalibration(){
- calibrationSamples=[];
- calibrationActive=true;
+ if(calibration.phase!=="idle")return;
+ calibration={phase:"stationary",stationary:[],drive:[],driveWeights:[],timer:null};
  ui.calibrate.disabled=true;
- setStatus("Calibration : accélère doucement en ligne droite…");
- setTimeout(()=>{if(calibrationActive)finishCalibration();},7000);
+ setStatus("Calibration 1/2 : véhicule arrêté, ne touche pas le téléphone pendant 2,5 s.");
+ updateCalibrationBadge();
+ calibration.timer=setTimeout(()=>{
+  if(calibration.phase!=="stationary")return;
+  const gravityMean=meanVector(calibration.stationary);
+  if(length(gravityMean)<2){
+   cancelCalibration("Gravité non détectée. Recommence la calibration.");
+   return;
+  }
+  sensorCalibration.gravity=normalize(gravityMean);
+  calibration.phase="drive";
+  setStatus("Calibration 2/2 : accélère doucement en ligne droite pendant 6 s.");
+  updateCalibrationBadge();
+  calibration.timer=setTimeout(finishCalibration,6500);
+ },2500);
 }
 
 function finishCalibration(){
- calibrationActive=false;
- if(calibrationSamples.length<5){
-  setStatus("Calibration insuffisante. Recommence.");
-  ui.calibrate.disabled=false;
+ if(calibration.phase!=="drive")return;
+ let weighted=vec(),totalWeight=0;
+ calibration.drive.forEach((sample,index)=>{
+  const weight=calibration.driveWeights[index]||.2;
+  weighted=add(weighted,scale(sample,weight));totalWeight+=weight;
+ });
+ let forwardVector=totalWeight?scale(weighted,1/totalWeight):vec();
+ forwardVector=projectToPlane(forwardVector,sensorCalibration.gravity);
+ if(length(forwardVector)<.055){
+  const strongest=[...calibration.drive].sort((a,b)=>length(b)-length(a))[0];
+  if(strongest)forwardVector=projectToPlane(strongest,sensorCalibration.gravity);
+ }
+ if(length(forwardVector)<.04){
+  cancelCalibration("Accélération insuffisante. Recommence sur une ligne droite.");
   return;
  }
- const sx=calibrationSamples.reduce((sum,point)=>sum+point.x,0);
- const sy=calibrationSamples.reduce((sum,point)=>sum+point.y,0);
- const norm=Math.hypot(sx,sy)||1;
- forward={x:sx/norm,y:sy/norm};
- localStorage.setItem("drivepulse-forward",JSON.stringify(forward));
+ sensorCalibration.forward=normalize(forwardVector,sensorCalibration.forward);
+ sensorCalibration.lateral=normalize(cross(sensorCalibration.gravity,sensorCalibration.forward),sensorCalibration.lateral);
+ sensorCalibration.calibrated=true;
+ sensorCalibration.source="Calibration Motion + GPS";
+ saveCalibration();
+ calibration.phase="idle";
+ calibration.timer=null;
  ui.calibrate.disabled=false;
- setStatus("Calibration terminée.");
+ automaticSignScore=0;
+ updateCalibrationBadge();
+ setStatus("Calibration 3D terminée : axes avant, latéral et vertical enregistrés.");
+}
+
+function cancelCalibration(message){
+ if(calibration.timer)clearTimeout(calibration.timer);
+ calibration={phase:"idle",stationary:[],drive:[],driveWeights:[],timer:null};
+ ui.calibrate.disabled=false;
+ updateCalibrationBadge();
+ setStatus(message);
 }
 
 function startGps(){
  if(!navigator.geolocation)return;
- watchId=navigator.geolocation.watchPosition(({coords})=>{
-  if(coords.speed!=null&&!demoTimer&&!journeyTimer)speedKmh=Math.max(0,coords.speed*3.6);
- },()=>setStatus("GPS indisponible : le moteur audio reste utilisable."),{enableHighAccuracy:true,maximumAge:500,timeout:10000});
+ watchId=navigator.geolocation.watchPosition(position=>{
+  if(demoTimer||journeyTimer)return;
+  const {coords,timestamp}=position;
+  const speed=coords.speed!=null&&Number.isFinite(coords.speed)?Math.max(0,coords.speed):gpsSpeedMs;
+  if(lastGps.timestamp&&lastGps.speed!=null){
+   const dt=Math.max(.2,Math.min(5,(timestamp-lastGps.timestamp)/1000));
+   const rawAcceleration=clamp((speed-lastGps.speed)/dt,-4,4);
+   gpsAcceleration=lowPass(gpsAcceleration,rawAcceleration,.34);
+  }
+  gpsSpeedMs=speed;
+  speedKmh=lowPass(speedKmh,speed*3.6,.42);
+
+  const heading=coords.heading;
+  if(lastGps.timestamp&&lastGps.heading!=null&&heading!=null&&Number.isFinite(heading)&&speed>2){
+   const dt=Math.max(.2,Math.min(5,(timestamp-lastGps.timestamp)/1000));
+   const rate=Math.abs(wrapDegrees(heading-lastGps.heading))/dt;
+   gpsHeadingRate=lowPass(gpsHeadingRate,clamp(rate,0,120),.30);
+  }else gpsHeadingRate=lowPass(gpsHeadingRate,0,.08);
+  lastGps={timestamp,speed,heading:heading!=null&&Number.isFinite(heading)?heading:lastGps.heading};
+ },()=>setStatus("GPS indisponible : les capteurs Motion restent actifs."),{enableHighAccuracy:true,maximumAge:250,timeout:10000});
 }
 
 function startDemo(){
- if(demoTimer){
-  clearInterval(demoTimer);
-  demoTimer=null;
-  ui.demo.textContent="Simulation libre";
-  setStatus("Simulation arrêtée.");
-  return;
- }
+ if(demoTimer){clearInterval(demoTimer);demoTimer=null;ui.demo.textContent="Simulation libre";setStatus("Simulation arrêtée.");return;}
  if(journeyTimer){clearInterval(journeyTimer);journeyTimer=null;}
- let phase=0;
- ui.demo.textContent="Arrêter la simulation";
- setStatus("Simulation musicale active.");
+ let phase=0;ui.demo.textContent="Arrêter la simulation";setStatus("Simulation low latency active.");
  demoTimer=setInterval(()=>{
-  phase+=.075;
-  speedKmh=Math.max(0,50+48*Math.sin(phase*.22));
-  smoothed.accel=clamp((Math.sin(phase)+.15)*.72);
-  smoothed.brake=clamp((-Math.sin(phase*.51)-.34)*.86);
-  smoothed.turn=clamp(Math.abs(Math.sin(phase*.37))*.92);
+  phase+=.075;speedKmh=Math.max(0,50+48*Math.sin(phase*.22));
+  smoothed.accel=clamp((Math.sin(phase)+.15)*.72);smoothed.brake=clamp((-Math.sin(phase*.51)-.34)*.86);smoothed.turn=clamp(Math.abs(Math.sin(phase*.37))*.92);
  },100);
 }
 
 function startJourney(){
- if(journeyTimer){
-  clearInterval(journeyTimer);
-  journeyTimer=null;
-  ui.journey.textContent="Scénario trajet complet";
-  setStatus("Scénario arrêté.");
-  return;
- }
+ if(journeyTimer){clearInterval(journeyTimer);journeyTimer=null;ui.journey.textContent="Scénario trajet complet";setStatus("Scénario arrêté.");return;}
  if(demoTimer){clearInterval(demoTimer);demoTimer=null;ui.demo.textContent="Simulation libre";}
- let elapsed=0;
- ui.journey.textContent="Arrêter le scénario";
- setStatus("Scénario : ville → campagne → autoroute → freinage.");
+ let elapsed=0;ui.journey.textContent="Arrêter le scénario";setStatus("Scénario : ville → campagne → autoroute → freinage.");
  journeyTimer=setInterval(()=>{
-  elapsed+=.1;
-  let targetSpeed=0,acceleration=0,brake=0,turn=0;
+  elapsed+=.1;let targetSpeed=0,acceleration=0,brake=0,turn=0;
   if(elapsed<8){targetSpeed=0;roadMode="city";}
   else if(elapsed<26){targetSpeed=(elapsed-8)/18*50;acceleration=.48;roadMode="city";}
   else if(elapsed<45){targetSpeed=50;turn=.10;}
@@ -536,167 +775,111 @@ function startJourney(){
   else if(elapsed<102){targetSpeed=80+(elapsed-82)/20*50;acceleration=.43;roadMode="highway";}
   else if(elapsed<126){targetSpeed=130;}
   else if(elapsed<138){targetSpeed=130-(elapsed-126)/12*125;brake=.76;}
-  else{
-   targetSpeed=0;
-   clearInterval(journeyTimer);
-   journeyTimer=null;
-   ui.journey.textContent="Scénario trajet complet";
-   setStatus("Scénario terminé.");
-  }
-  applyRoadMode(roadMode);
-  speedKmh=Math.max(0,targetSpeed);
-  smoothed.accel=lowPass(smoothed.accel,acceleration,.22);
-  smoothed.brake=lowPass(smoothed.brake,brake,.22);
-  smoothed.turn=lowPass(smoothed.turn,turn,.22);
+  else{targetSpeed=0;clearInterval(journeyTimer);journeyTimer=null;ui.journey.textContent="Scénario trajet complet";setStatus("Scénario terminé.");}
+  applyRoadMode(roadMode);speedKmh=Math.max(0,targetSpeed);
+  smoothed.accel=lowPass(smoothed.accel,acceleration,.25);smoothed.brake=lowPass(smoothed.brake,brake,.25);smoothed.turn=lowPass(smoothed.turn,turn,.25);
  },100);
+}
+
+function toggleFixedMix(){
+ fixedMixMode=!fixedMixMode;
+ ui.quality.textContent=fixedMixMode?"Revenir à l’adaptatif":"Mix fixe A/B";
+ ui.audioMode.textContent=fixedMixMode?"Mix fixe":"Adaptatif low latency";
+ if(fixedMixMode){requestTargetScene("chorus");setStatus("Mix fixe : niveaux stables pour contrôler la qualité audio.");}
+ else{candidateSince=0;setStatus("Mix adaptatif low latency réactivé.");}
+ applyBusMix(true);
+}
+
+function toggleLogging(){
+ sensorLogging=!sensorLogging;
+ ui.record.textContent=sensorLogging?"Arrêter l’enregistrement":"Enregistrer capteurs";
+ if(sensorLogging){lastLogAt=0;setStatus("Journal capteurs actif (5 mesures/s). ");}
+ else setStatus(`${sensorLog.length} mesures capteurs enregistrées.`);
+}
+
+function downloadSensorLog(){
+ if(!sensorLog.length)return;
+ const headers=Object.keys(sensorLog[0]);
+ const lines=[headers.join(";"),...sensorLog.map(row=>headers.map(key=>String(row[key]).replaceAll(";",",")).join(";"))];
+ const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob);
+ const link=document.createElement("a");
+ link.href=url;link.download=`drivepulse-v8-1-sensors-${new Date().toISOString().replaceAll(":","-")}.csv`;
+ document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 async function start(){
  if(running)return;
  try{
-  generation++;
-  setStatus("Chargement des stems CC BY…");
-
-  // Sur iPhone, ces deux appels doivent être initiés directement par le clic.
+  generation++;setStatus("Chargement des six bus audio AAC 256 kb/s…");
   createAudioGraph();
   const resumePromise=audioCtx.resume();
-  const motionPermissionPromise=requestMotionPermission();
-
+  const permissionPromise=requestMotionPermission();
   await loadManifest();
   await resumePromise;
-  await loadSegment("intro");
-  const motionGranted=await motionPermissionPromise;
+  await Promise.all([loadScene("intro"),loadScene("groove")]);
+  const motionGranted=await permissionPromise;
+  loadSavedCalibration();
 
-  const saved=localStorage.getItem("drivepulse-forward");
-  if(saved){
-   try{forward=JSON.parse(saved);}catch{}
-  }
-
-  running=true;
-  currentSegment="intro";
-  targetSegment="intro";
-  scheduledSegment="intro";
-  nextLoopTime=audioCtx.currentTime+.30;
-  currentLoopStart=nextLoopTime;
-  scheduler();
-  schedulerTimer=setInterval(scheduler,80);
-  updateTimer=setInterval(updateEngine,140);
-
+  running=true;currentScene="intro";targetScene="intro";candidateScene="intro";candidateSince=performance.now();
+  const startAt=audioCtx.currentTime+.28;
+  activeGroup=startSceneGroup("intro",startAt,0,.025);
+  currentPhaseStart=startAt;nextLoopTime=startAt+LOOP_DURATION;
+  schedulerTimer=setInterval(scheduler,40);updateTimer=setInterval(updateEngine,ENGINE_INTERVAL);
   if(motionGranted)window.addEventListener("devicemotion",handleMotion,{passive:true});
   startGps();
+  prefetchAllAudio();
 
-  ui.start.disabled=true;
-  ui.calibrate.disabled=!motionGranted;
-  ui.stop.disabled=false;
-  ui.demo.disabled=false;
-  ui.journey.disabled=false;
-  setStatus(motionGranted?"Stems actifs. Calibre l’axe avant.":"Stems actifs. Capteurs Motion indisponibles.");
-  updateEngine();
- }catch(error){
-  console.error(error);
-  setStatus(error.message||"Impossible de démarrer DrivePulse V8.");
-  stop(false);
- }
+  ui.start.disabled=true;ui.calibrate.disabled=!motionGranted;ui.stop.disabled=false;ui.demo.disabled=false;ui.journey.disabled=false;
+  ui.quality.disabled=false;ui.record.disabled=false;ui.downloadLog.disabled=sensorLog.length===0;
+  setStatus(motionGranted?(sensorCalibration.calibrated?"V8.1 active : calibration 3D enregistrée.":"V8.1 active : effectue la calibration 3D."):"Audio actif. Capteurs Motion indisponibles.");
+  applyBusMix(true);updateEngine();
+ }catch(error){console.error(error);setStatus(error.message||"Impossible de démarrer DrivePulse V8.1.");stop(false);}
 }
 
 function stop(updateStatus=true){
- generation++;
- running=false;
- calibrationActive=false;
- if(schedulerTimer)clearInterval(schedulerTimer);
- if(updateTimer)clearInterval(updateTimer);
- if(demoTimer)clearInterval(demoTimer);
- if(journeyTimer)clearInterval(journeyTimer);
+ generation++;running=false;
+ if(calibration.timer)clearTimeout(calibration.timer);
+ calibration.phase="idle";
+ [schedulerTimer,updateTimer,demoTimer,journeyTimer].forEach(timer=>{if(timer)clearInterval(timer);});
  schedulerTimer=updateTimer=demoTimer=journeyTimer=null;
-
- if(watchId!=null&&navigator.geolocation)navigator.geolocation.clearWatch(watchId);
- watchId=null;
+ if(watchId!=null&&navigator.geolocation)navigator.geolocation.clearWatch(watchId);watchId=null;
  window.removeEventListener("devicemotion",handleMotion);
-
- activeSources.forEach(source=>{try{source.stop();}catch{}});
- activeSources.clear();
- if(audioCtx){audioCtx.close().catch(()=>{});}
- audioCtx=masterGain=masterFilter=compressor=null;
- agentNodes.clear();
- segmentCache.clear();
- segmentLoads.clear();
- AGENTS.forEach(agent=>setAgentVisualState(agent.id,"inactive"));
-
- ui.start.disabled=false;
- ui.calibrate.disabled=true;
- ui.stop.disabled=true;
- ui.demo.disabled=true;
- ui.journey.disabled=true;
- ui.demo.textContent="Simulation libre";
- ui.journey.textContent="Scénario trajet complet";
- if(updateStatus)setStatus("Arrêté.");
+ activeGroups.forEach(group=>cancelFutureGroup(group));activeGroups.clear();
+ if(audioCtx)audioCtx.close().catch(()=>{});
+ audioCtx=masterGain=masterFilter=masterCompressor=null;
+ busNodes.clear();sceneCache.clear();sceneLoads.clear();sceneAccess.clear();activeGroup=pendingTransition=nextLoopGroup=null;
+ BUSES.forEach(bus=>setAgentVisualState(bus.id,"inactive"));
+ if(sensorLogging){sensorLogging=false;ui.record.textContent="Enregistrer capteurs";}
+ ui.start.disabled=false;ui.calibrate.disabled=true;ui.stop.disabled=true;ui.demo.disabled=true;ui.journey.disabled=true;ui.quality.disabled=true;ui.record.disabled=true;
+ ui.demo.textContent="Simulation libre";ui.journey.textContent="Scénario trajet complet";ui.quality.textContent="Mix fixe A/B";fixedMixMode=false;
+ updateCalibrationBadge();if(updateStatus)setStatus("Arrêté.");
 }
 
 function applyRoadMode(mode){
- if(!ROAD_PROFILES[mode])return;
- roadMode=mode;
- localStorage.setItem("drivepulse-road-mode",mode);
+ if(!ROAD_PROFILES[mode])return;roadMode=mode;localStorage.setItem("drivepulse-road-mode",mode);
  document.querySelectorAll(".road-mode").forEach(button=>button.classList.toggle("active",button.dataset.roadMode===mode));
- const profile=ROAD_PROFILES[mode];
- ui.road.textContent=profile.label;
- ui.roadHelp.textContent=profile.help;
+ ui.road.textContent=ROAD_PROFILES[mode].label;ui.roadHelp.textContent=ROAD_PROFILES[mode].help;
 }
 
 const HELP_CONTENT={
- responsiveness:{
-  title:"Réactivité musicale",
-  text:"Détermine la rapidité avec laquelle DrivePulse demande une nouvelle séquence musicale. Les changements restent synchronisés sur une boucle de huit mesures.",
-  recommendation:"Conseil : 1,0 pour commencer. Une valeur élevée rend les changements de séquence plus fréquents."
- },
- accelSensitivity:{
-  title:"Sensibilité accélération",
-  text:"Amplifie ou réduit les réactions de l’arrangement aux accélérations et aux freinages détectés par le téléphone.",
-  recommendation:"Conseil : conserve 1,0 après la calibration, puis ajuste en voiture."
- },
- turnSensitivity:{
-  title:"Sensibilité virage",
-  text:"Contrôle l’influence des virages sur les percussions Motion et sur l’énergie musicale.",
-  recommendation:"Conseil : 1,0 sur route normale ; 1,2 à 1,4 sur une route sinueuse."
- }
+ responsiveness:{title:"Réactivité musicale",text:"Les volumes réagissent désormais immédiatement, au prochain temps ou à la prochaine mesure. Ce réglage agit surtout sur la durée de validation avant un changement de scène.",recommendation:"Conseil : 1,0. Monte vers 1,3 si les scènes changent encore trop lentement."},
+ accelSensitivity:{title:"Sensibilité accélération",text:"Amplifie la fusion entre l’accélération 3D du téléphone et la variation de vitesse GPS.",recommendation:"Conseil : commence à 1,0 après la calibration 3D."},
+ turnSensitivity:{title:"Sensibilité virage",text:"Combine l’accélération latérale, la rotation autour de la verticale et le changement de cap GPS.",recommendation:"Conseil : 1,0 ; baisse si les bosses déclenchent trop de percussions."}
 };
-
-function openHelp(key){
- const item=HELP_CONTENT[key];
- if(!item)return;
- ui.helpTitle.textContent=item.title;
- ui.helpText.textContent=item.text;
- ui.helpRecommendation.textContent=item.recommendation;
- ui.helpModal.hidden=false;
-}
-
+function openHelp(key){const item=HELP_CONTENT[key];if(!item)return;ui.helpTitle.textContent=item.title;ui.helpText.textContent=item.text;ui.helpRecommendation.textContent=item.recommendation;ui.helpModal.hidden=false;}
 function closeHelp(){ui.helpModal.hidden=true;}
+function updateSettingValues(){ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);}
 
-function updateSettingValues(){
- ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);
- ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);
- ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);
-}
-
-renderAgents();
-applyRoadMode(roadMode);
-updateSectionTimeline();
-updateSettingValues();
-setStatus("Prêt — stems Kalte Ohren chargés au démarrage.");
-
-ui.start.addEventListener("click",start);
-ui.stop.addEventListener("click",()=>stop(true));
-ui.calibrate.addEventListener("click",beginCalibration);
-ui.demo.addEventListener("click",startDemo);
-ui.journey.addEventListener("click",startJourney);
-ui.idlePiano.addEventListener("change",()=>{localStorage.setItem("drivepulse-idle-music",ui.idlePiano.checked?"1":"0");applyAgentMix();});
+renderAgents();loadSavedCalibration();applyRoadMode(roadMode);updateSectionTimeline();updateSettingValues();updateCalibrationBadge();setStatus("Prêt — V8.1 qualité, faible latence et fusion 3D.");
+ui.start.addEventListener("click",start);ui.stop.addEventListener("click",()=>stop(true));ui.calibrate.addEventListener("click",beginCalibration);
+ui.demo.addEventListener("click",startDemo);ui.journey.addEventListener("click",startJourney);ui.quality.addEventListener("click",toggleFixedMix);
+ui.record.addEventListener("click",toggleLogging);ui.downloadLog.addEventListener("click",downloadSensorLog);
+ui.idlePiano.addEventListener("change",()=>{localStorage.setItem("drivepulse-idle-music",ui.idlePiano.checked?"1":"0");applyBusMix(true);});
 document.querySelectorAll(".road-mode").forEach(button=>button.addEventListener("click",()=>applyRoadMode(button.dataset.roadMode)));
 document.querySelectorAll(".help-btn").forEach(button=>button.addEventListener("click",()=>openHelp(button.dataset.help)));
-ui.closeHelp.addEventListener("click",closeHelp);
-ui.helpModal.addEventListener("click",event=>{if(event.target===ui.helpModal)closeHelp();});
+ui.closeHelp.addEventListener("click",closeHelp);ui.helpModal.addEventListener("click",event=>{if(event.target===ui.helpModal)closeHelp();});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeHelp();});
 [ui.responsiveness,ui.accelSensitivity,ui.turnSensitivity].forEach(input=>input.addEventListener("input",updateSettingValues));
-
-const savedIdle=localStorage.getItem("drivepulse-idle-music");
-if(savedIdle!==null)ui.idlePiano.checked=savedIdle==="1";
-
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js"));
+const savedIdle=localStorage.getItem("drivepulse-idle-music");if(savedIdle!==null)ui.idlePiano.checked=savedIdle==="1";
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=8.1"));

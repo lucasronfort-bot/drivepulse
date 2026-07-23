@@ -1,6 +1,6 @@
 # Attribution musicale
 
-DrivePulse V8 utilise des stems adaptés de :
+DrivePulse V8.1 utilise des stems adaptés de :
 
 **Kalte Ohren (Cold Ears)**  
 starfrosch feat. Jerry Spoon
@@ -10,10 +10,12 @@ Licence : Creative Commons Attribution 3.0 — https://creativecommons.org/licen
 
 ## Modifications réalisées pour DrivePulse
 
-- regroupement de pistes par fonction musicale ;
-- équilibrage des niveaux ;
-- conversion en AAC ;
+- regroupement des stems en six bus fonctionnels ;
+- équilibrage des niveaux et création d’une marge de sécurité ;
+- exclusion des retours de délai et de réverbération afin d’éviter les doublages de signal ;
+- conversion en AAC-LC 256 kb/s ;
 - découpage en boucles synchronisées de huit mesures ;
-- activation, retrait, filtrage et réarrangement selon la conduite.
+- activation, retrait, filtrage et réarrangement selon la conduite ;
+- transitions de scène à la prochaine mesure.
 
-Aucun stem vocal n'était présent dans le pack reçu. Le personnage Voice a donc été remplacé par Guitar dans ce prototype.
+DrivePulse indique qu’il s’agit d’une adaptation et conserve cette attribution avec le projet distribué.
