@@ -4,16 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#060a12">
-<title>DrivePulse V8.2</title>
+<title>DrivePulse V8.4</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="style.css?v=8.2">
+<link rel="stylesheet" href="style.css?v=8.4">
 </head>
 <body>
 <main class="app-shell">
 
 <header class="topbar">
   <div class="brand-block">
-    <p class="eyebrow">Toyota C-HR · Prototype V8.2</p>
+    <p class="eyebrow">Toyota C-HR · Prototype V8.4</p>
     <h1>Drive<span>Pulse</span></h1>
     <p id="status" class="status"><i></i> Prêt</p>
   </div>
@@ -76,7 +76,7 @@
       <div>
         <p class="section-kicker">Orchestre musical</p>
         <h2>Personnages actifs</h2>
-        <p>Six bus audio haute qualité regroupent les stems sans doubler les retours de délai et de réverbération.</p>
+        <p>Sept bus audio haute qualité : niveaux renforcés, piano séparé et harmonie sans Rhodes en double.</p>
       </div>
 
       <div class="agent-legend">
@@ -90,6 +90,53 @@
   </section>
 
   <aside class="side-column">
+
+
+    <section class="glass-panel music-library-panel">
+      <div class="panel-heading compact">
+        <div>
+          <p class="section-kicker">Bibliothèque musicale</p>
+          <h2>Choix du morceau</h2>
+        </div>
+        <span id="trackSwitchState" class="track-switch-state">Prêt</span>
+      </div>
+
+      <label class="track-select-label" for="trackSelect">Morceau / arrangement</label>
+      <select id="trackSelect" class="track-select"></select>
+
+      <div class="track-navigation">
+        <button id="previousTrackBtn" type="button" aria-label="Morceau précédent">◀ Précédent</button>
+        <button id="nextTrackBtn" type="button" aria-label="Morceau suivant">Suivant ▶</button>
+      </div>
+
+      <div class="track-information">
+        <strong id="trackTitle">Kalte Ohren</strong>
+        <span id="trackEdition">Original Drive</span>
+        <small id="trackArtist">starfrosch feat. Jerry Spoon</small>
+      </div>
+
+      <div class="auto-track-row">
+        <div>
+          <strong>Rotation automatique</strong>
+          <small>Change à la prochaine mesure avec un fondu.</small>
+        </div>
+        <label class="switch">
+          <input id="autoTrackToggle" type="checkbox">
+          <span></span>
+        </label>
+      </div>
+
+      <div class="auto-track-options">
+        <label for="autoTrackDuration">Changer toutes les</label>
+        <select id="autoTrackDuration">
+          <option value="3">3 minutes</option>
+          <option value="5" selected>5 minutes</option>
+          <option value="10">10 minutes</option>
+          <option value="15">15 minutes</option>
+        </select>
+        <strong id="trackCountdown">Désactivé</strong>
+      </div>
+    </section>
 
     <section class="glass-panel settings-panel">
       <div class="panel-heading compact">
@@ -139,9 +186,9 @@
     <section class="glass-panel compact-panel">
       <div class="toggle-copy">
         <div>
-          <p class="section-kicker">Piano basse vitesse</p>
-          <strong>Piano de 0 à 30 km/h</strong>
-          <small>Le Rhodes accompagne l’arrêt et la conduite lente, puis disparaît progressivement au-dessus de 30 km/h.</small>
+          <p class="section-kicker">Musique à l’arrêt</p>
+          <strong>Ambiance douce</strong>
+          <small>Les pads, effets et accords restent audibles lorsque le véhicule est immobilisé.</small>
         </div>
         <label class="switch">
           <input id="idlePianoToggle" type="checkbox" checked>
@@ -265,7 +312,7 @@
 <section class="glass-panel diagnostic-panel">
   <div class="panel-heading compact">
     <div>
-      <p class="section-kicker">Diagnostic V8.1</p>
+      <p class="section-kicker">Diagnostic V8.4</p>
       <h2>Fusion Motion + GPS</h2>
       <p>Ces valeurs permettent de vérifier l’orientation du téléphone et d’exporter un journal du trajet.</p>
     </div>
@@ -288,7 +335,7 @@
 
 <footer class="safety-note">
   <strong>Sécurité :</strong> manipulations à l’arrêt ou par un passager uniquement. Le téléphone doit rester rigidement fixé.<br>
-  Musique adaptée de « Kalte Ohren (Cold Ears) » par starfrosch feat. Jerry Spoon — licence CC BY 3.0.
+  <span id="musicAttribution">Musique adaptée de « Kalte Ohren (Cold Ears) » par starfrosch feat. Jerry Spoon — licence CC BY 3.0.</span>
 </footer>
 
 </main>
@@ -302,6 +349,6 @@
   </div>
 </div>
 
-<script src="app.js?v=8.2"></script>
+<script src="app.js?v=8.4"></script>
 </body>
 </html>

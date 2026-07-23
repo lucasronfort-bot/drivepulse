@@ -515,3 +515,86 @@ meter{width:100%;height:8px;margin-top:12px;accent-color:var(--blue)}
 .calibration-badge.running{color:var(--blue);border-color:rgba(56,164,255,.35)}
 @media(max-width:900px){.diagnostic-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.utility-bar{grid-template-columns:repeat(2,1fr)}.diagnostic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+.music-library-panel{padding:18px}
+.track-switch-state{
+  padding:5px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  color:var(--muted);
+  background:rgba(255,255,255,.04);
+  font-size:.67rem;
+  font-weight:800;
+}
+.track-switch-state.loading{
+  color:var(--yellow);
+  border-color:rgba(246,195,59,.34);
+}
+.track-select-label{
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:.72rem;
+}
+.track-select,
+.auto-track-options select{
+  width:100%;
+  min-height:42px;
+  padding:8px 11px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--text);
+  background:#101927;
+}
+.track-navigation{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:9px;
+}
+.track-navigation button{
+  min-height:39px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  color:#dce8f5;
+  background:rgba(255,255,255,.045);
+  font-size:.75rem;
+  font-weight:780;
+}
+.track-information{
+  margin-top:12px;
+  padding:12px;
+  border-radius:13px;
+  background:rgba(255,255,255,.04);
+}
+.track-information strong,
+.track-information span,
+.track-information small{display:block}
+.track-information strong{font-size:.92rem}
+.track-information span{margin-top:3px;color:#76caff;font-size:.78rem;font-weight:750}
+.track-information small{margin-top:5px;color:var(--muted);font-size:.70rem}
+.auto-track-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:13px;
+}
+.auto-track-row strong{display:block;font-size:.80rem}
+.auto-track-row small{display:block;margin-top:3px;color:var(--muted);font-size:.67rem}
+.auto-track-options{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  align-items:center;
+  gap:8px;
+  margin-top:11px;
+}
+.auto-track-options label{color:var(--muted);font-size:.70rem}
+.auto-track-options select{min-height:36px;font-size:.73rem}
+.auto-track-options strong{
+  grid-column:1/-1;
+  color:#c9d6e4;
+  font-size:.72rem;
+  text-align:right;
+}

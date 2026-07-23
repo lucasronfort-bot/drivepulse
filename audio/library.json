@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "default_track": "kalte-ohren-drive",
+  "tracks": [
+    {
+      "id": "kalte-ohren-drive",
+      "title": "Kalte Ohren",
+      "edition": "Original Drive",
+      "artist": "starfrosch feat. Jerry Spoon",
+      "license": "CC BY 3.0",
+      "manifest": "audio/kalte-ohren/manifest.json",
+      "profile": "drive",
+      "accent": "#38a4ff"
+    },
+    {
+      "id": "kalte-ohren-night",
+      "title": "Kalte Ohren",
+      "edition": "Night Drive Edit",
+      "artist": "starfrosch feat. Jerry Spoon",
+      "license": "CC BY 3.0",
+      "manifest": "audio/kalte-ohren/manifest.json",
+      "profile": "night",
+      "accent": "#a84cff"
+    }
+  ],
+  "auto_rotation_minutes": [
+    3,
+    5,
+    10,
+    15
+  ]
+}

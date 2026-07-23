@@ -1,8 +1,8 @@
-﻿Bus;Sources principales;Traitement;Réaction;Condition d’utilisation
-RHYTHM;3-BazzISM2, SNARE, RIM, SNARE-1;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps;Énergie > 10 %, diminué par le freinage
-TOPS;Open HH, HH FT, 16HH, Bongo A, Percs Top, RI_M;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps;Accélération, virage ou énergie > 27 %
-BASS;fetter sub, mid bass line, high bass line;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure;Énergie > 12 %, pleine vers 40 %
-HARMONY;INTRO PAD, Guitar, Omnisphere 30/31/32, Rhodes selon la scène;AAC-LC 256 kb/s, plafond -6 dB;Immédiate;Toujours présent, réduit avec l’énergie et le piano
-PIANO;Rhodes (boucle dédiée extraite à 96 s);AAC-LC 256 kb/s, plafond -6 dB;Immédiate;Actif de 0 à 30 km/h, fondu entre 26 et 34 km/h
-LEAD;PLUCK ARP, Sylenth1 35/36;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure;Énergie > 40 %, pleine vers 72 %
-FX;LIFTS, Lift, Riser White Noise, Downlifter;AAC-LC 256 kb/s, plafond -6 dB;Immédiate;Toujours léger, renforcé par accélération, freinage et transition
+Bus;Sources principales;Traitement;Réaction
+RHYTHM;3-BazzISM2, SNARE, RIM, SNARE-1;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps
+TOPS;Open HH, HH FT, 16HH, Bongo A, Percs Top, RI_M;AAC-LC 256 kb/s, plafond -6 dB;Prochain temps
+BASS;fetter sub, mid bass line, high bass line;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure
+HARMONY;INTRO PAD, Guitar, Omnisphere 30/31/32 (Rhodes exclu);AAC-LC 256 kb/s, plafond -6 dB;Immédiate
+PIANO;Rhodes seul;Niveau audio inchangé;Immédiate, actif jusqu’à 30 km/h
+LEAD;PLUCK ARP, Sylenth1 35/36;AAC-LC 256 kb/s, plafond -6 dB;Prochaine mesure
+FX;LIFTS, Lift, Riser White Noise, Downlifter;AAC-LC 256 kb/s, plafond -6 dB;Immédiate

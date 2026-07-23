@@ -1,10 +1,11 @@
-const CACHE="drivepulse-v8-2";
+const CACHE="drivepulse-v8-4";
 const CORE=[
  "./",
  "./index.html",
- "./style.css?v=8.2",
- "./app.js?v=8.2",
+ "./style.css?v=8.4",
+ "./app.js?v=8.4",
  "./manifest.webmanifest",
+ "./audio/library.json",
  "./audio/kalte-ohren/manifest.json","./audio/kalte-ohren/common/piano.m4a"
 ];
 

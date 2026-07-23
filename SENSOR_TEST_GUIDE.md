@@ -1,4 +1,4 @@
-# Guide d’essai en voiture — DrivePulse V8.1
+# Guide d’essai en voiture — DrivePulse V8.3
 
 ## Avant de partir
 
@@ -37,3 +37,12 @@ Arrêter l’enregistrement puis appuyer sur `Télécharger CSV`.
 - freinage : `Freinage` monte rapidement ;
 - virage gauche et droite : `Virage` monte dans les deux directions ;
 - ligne droite stable : les trois signaux retombent progressivement.
+
+
+## Vérifications spécifiques V8.3
+
+- vérifier que le piano disparaît progressivement entre 26 et 34 km/h ;
+- vérifier que Harmony reste audible sans donner l'impression d'un piano doublé ;
+- faire plusieurs accélérations progressives et franches ;
+- rester à 45–50 km/h pendant au moins une minute afin de confirmer que le refrain ne reste pas actif en permanence ;
+- comparer les nouvelles colonnes `rhythm_level`, `tops_level`, `bass_level`, `harmony_level`, `piano_level`, `lead_level` et `fx_level`.

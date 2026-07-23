@@ -1,79 +1,56 @@
-# DrivePulse V8.2 — comportement détaillé des stems
+# DrivePulse V8.3 — comportement des stems
 
-## Calcul de l’énergie
+## Principe général
 
-L’énergie musicale combine :
+La V8.3 restaure une vraie marge dynamique : la vitesse constante ne met plus presque tous les stems au maximum. Les fichiers audio de tous les bus sauf Piano ont été reconstruits depuis les FLAC originaux et remontés avec un plafond de sécurité.
 
-- 54 % de vitesse relative au profil choisi ;
-- 19 % de mémoire courte ;
-- 11 % de mémoire longue ;
-- 20 % d’accélération ;
-- 8 % de virage ;
-- retrait de 13 % du freinage.
+## Niveaux audio
 
-Les pourcentages ne constituent pas une somme fixe : la valeur finale est bornée entre 0 et 100 %.
+- Rhythm : plafond -5 dB, gain de sortie +12 %.
+- Tops : plafond -7 dB, gain de sortie +18 %.
+- Bass : plafond -6 dB, gain de sortie +12 %.
+- Harmony : plafond -6 dB, gain de sortie +10 %, sans Rhodes.
+- Piano : fichier et gain inchangés.
+- Lead : plafond -6 dB, gain de sortie +16 %.
+- FX : plafond -8 dB, gain de sortie +12 %.
 
-## Bus audio
+Le compresseur master protège la somme des stems sans réduire le piano séparément.
 
-### PIANO
+## Activation
 
-- Source : stem `Rhodes`.
-- Niveau maximal de 0 à environ 26 km/h.
-- Fondu progressif entre 26 et 34 km/h.
-- Pratiquement inaudible au-dessus de 34 km/h.
-- Réaction immédiate.
+### Piano
+- 0 à 26 km/h : niveau principal.
+- 26 à 34 km/h : fondu progressif.
+- au-delà de 34 km/h : coupé.
 
-### HARMONY
+### Harmony
+Toujours présent. Il contient uniquement les pads, la guitare et les textures Omnisphere. Le Rhodes a été retiré pour éviter le doublage du piano.
 
-- Sources : pads, guitare, Omnisphere et éléments harmoniques propres à la scène.
-- Toujours présent pour éviter les silences.
-- Diminue légèrement lorsque l’énergie augmente.
-- Est également réduit lorsque le piano est fort, afin de conserver de la place dans le mix.
-- Réaction immédiate.
+### Rhythm
+Entre vers 20 % d'énergie et atteint son niveau principal vers 62 %. Le freinage le réduit rapidement. Les changements sont quantifiés au prochain temps (0 à 0,5 s).
 
-### RHYTHM
+### Tops
+Entre avec une accélération, un virage ou à partir d'environ 38 % d'énergie. Changement au prochain temps.
 
-- Sources : kick, snare et rim.
-- Commence à apparaître vers 10 % d’énergie.
-- Atteint son niveau principal vers 36 % d’énergie.
-- Le freinage peut réduire son niveau jusqu’à environ 72 %.
-- Changement synchronisé au prochain temps : délai maximal théorique 0,5 seconde.
+### Bass
+Entre vers 26 % d'énergie et atteint son niveau principal vers 62 %. Changement à la prochaine mesure (0 à 2 s).
 
-### TOPS
-
-- Sources : hi-hats, bongos et percussions hautes.
-- Peut être déclenché de trois façons : énergie au-dessus de 27 %, accélération ou virage.
-- L’accélération et les virages peuvent donc l’activer même à faible vitesse.
-- Changement au prochain temps.
-
-### BASS
-
-- Sources : sub, basse médium et basse haute.
-- Commence à apparaître vers 12 % d’énergie.
-- Atteint son niveau principal vers 40 % d’énergie.
-- Changement à la prochaine mesure : délai maximal théorique 2 secondes à 120 BPM.
-
-### LEAD
-
-- Sources : pluck arpégé et synthés principaux.
-- Commence à apparaître vers 40 % d’énergie.
-- Atteint son niveau principal vers 72 % d’énergie.
-- Changement à la prochaine mesure.
+### Lead
+Entre vers 56 % d'énergie et atteint son niveau principal vers 82 %. Changement à la prochaine mesure.
 
 ### FX
+Réagit immédiatement aux accélérations, freinages et changements de scène.
 
-- Sources : risers, lifts, bruit blanc et downlifters.
-- Un fond léger reste toujours présent.
-- Le niveau augmente avec l’accélération, le freinage et lorsqu’une nouvelle scène est demandée.
-- Réaction immédiate.
+## Scènes
 
-## Choix des scènes
+Les seuils de refrain dépendent maintenant du profil routier :
 
-- `Intro` : véhicule à l’arrêt ou énergie très faible.
-- `Groove` : vitesse relative > 27 % ou vitesse stable suffisamment longtemps.
-- `Montée` : accélération > 24 % ou mémoire courte > 54 %.
-- `Respiration` : freinage > 36 %.
-- `Refrain` : vitesse relative > 74 % et mémoire longue > 45 %.
-- `Finale` : même condition que Refrain avec mémoire longue > 70 %.
+- Ville : refrain au-dessus d'environ 52 km/h, avec énergie et mémoire maintenues.
+- Campagne : refrain au-dessus d'environ 74 km/h.
+- Autoroute : refrain au-dessus d'environ 112 km/h.
 
-Les changements de scène sont appliqués à la prochaine mesure, en conservant la position musicale dans la boucle.
+Le refrain ne dépend donc plus uniquement d'une vitesse urbaine normale.
+
+## Capteurs
+
+L'accélération GPS est désormais la source principale de l'accélération longitudinale. L'IMU sert à anticiper les mouvements courts, mais ne peut plus déclencher seule une forte montée. Le freinage et les virages conservent la fusion qui fonctionnait correctement lors du trajet V8.1.

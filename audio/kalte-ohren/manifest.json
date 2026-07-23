@@ -5,7 +5,7 @@
   "bpm": 120,
   "bar_duration": 2,
   "loop_duration": 16,
-  "format": "AAC-LC 256 kb/s, 44.1 kHz, stereo; dedicated Rhodes piano loop",
+  "format": "AAC-LC 256 kb/s, 44.1 kHz, stereo; bus stems rebuilt and peak-normalized; dedicated Rhodes piano unchanged",
   "buses": [
     "rhythm",
     "tops",
@@ -95,8 +95,8 @@
       "A-TrueVerb Stereo / Reverb return",
       "B-Delay"
     ],
-    "peak_ceiling_db": -6.0,
-    "master_note": "No per-stem loudness normalization; conservative bus gains preserve dynamics.",
-    "piano_note": "Dedicated Rhodes stem from bars starting at 96 s; active below 30 km/h with progressive fade."
+    "peak_ceiling_db": "Rhythm -5 dB; Tops -7 dB; Bass/Harmony/Lead -6 dB; FX -8 dB; Piano unchanged",
+    "master_note": "All non-piano buses rebuilt from original FLAC sources and raised safely. Harmony excludes Rhodes to prevent double playback.",
+    "piano_note": "Dedicated Rhodes stem unchanged; active below 30 km/h with progressive fade to 34 km/h."
   }
 }

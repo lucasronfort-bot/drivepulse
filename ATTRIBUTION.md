@@ -1,6 +1,6 @@
 # Attribution musicale
 
-DrivePulse V8.1 utilise des stems adaptés de :
+DrivePulse V8.3 utilise des stems adaptés de :
 
 **Kalte Ohren (Cold Ears)**  
 starfrosch feat. Jerry Spoon
