@@ -1,11 +1,11 @@
-const CACHE="drivepulse-v8-1";
+const CACHE="drivepulse-v8-2";
 const CORE=[
  "./",
  "./index.html",
- "./style.css?v=8.1",
- "./app.js?v=8.1",
+ "./style.css?v=8.2",
+ "./app.js?v=8.2",
  "./manifest.webmanifest",
- "./audio/kalte-ohren/manifest.json"
+ "./audio/kalte-ohren/manifest.json","./audio/kalte-ohren/common/piano.m4a"
 ];
 
 self.addEventListener("install",event=>{

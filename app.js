@@ -61,15 +61,16 @@ const SCENE_LABELS={
 };
 
 const BUSES=[
- {id:"rhythm",emoji:"🥁",name:"RHYTHM",role:"Kick, snare & rim",description:"Impulsion principale",color:"#ff5d67",timing:"beat"},
- {id:"tops",emoji:"✨",name:"TOPS",role:"Hi-hats & percussions",description:"Vitesse et virages",color:"#ffc13d",timing:"beat"},
- {id:"bass",emoji:"🔊",name:"BASS",role:"Sub & basses mélodiques",description:"Énergie de la route",color:"#25c5ff",timing:"bar"},
- {id:"harmony",emoji:"🎹",name:"HARMONY",role:"Rhodes, pads & guitare",description:"Corps harmonique",color:"#f06ec7",timing:"immediate"},
- {id:"lead",emoji:"🎶",name:"LEAD",role:"Pluck & synth lead",description:"Thème mélodique",color:"#dc65d9",timing:"bar"},
- {id:"fx",emoji:"🌊",name:"FX",role:"Risers & impacts",description:"Transitions",color:"#a853f2",timing:"immediate"}
+ {id:"rhythm",emoji:"🥁",name:"RHYTHM",role:"Kick, snare & rim",description:"Énergie > 10 % · réduit immédiatement au freinage",color:"#ff5d67",timing:"beat"},
+ {id:"tops",emoji:"✨",name:"TOPS",role:"Hi-hats & percussions",description:"Accélération, virages ou énergie > 27 %",color:"#ffc13d",timing:"beat"},
+ {id:"bass",emoji:"🔊",name:"BASS",role:"Sub & basses mélodiques",description:"Énergie > 12 % · changement à la prochaine mesure",color:"#25c5ff",timing:"bar"},
+ {id:"harmony",emoji:"☁️",name:"HARMONY",role:"Pads, textures & guitare",description:"Fond permanent · légèrement réduit quand l’énergie monte",color:"#f06ec7",timing:"immediate"},
+ {id:"piano",emoji:"🎹",name:"PIANO",role:"Rhodes dédié",description:"Actif de 0 à 30 km/h · fondu progressif jusqu’à 34 km/h",color:"#66d7ff",timing:"immediate"},
+ {id:"lead",emoji:"🎶",name:"LEAD",role:"Pluck & synth lead",description:"Énergie > 40 % · changement à la prochaine mesure",color:"#dc65d9",timing:"bar"},
+ {id:"fx",emoji:"🌊",name:"FX",role:"Risers & impacts",description:"Accélération, freinage et changement de scène",color:"#a853f2",timing:"immediate"}
 ];
 
-const FIXED_MIX={rhythm:.86,tops:.55,bass:.76,harmony:.74,lead:.58,fx:.34};
+const FIXED_MIX={rhythm:.86,tops:.55,bass:.76,harmony:.74,piano:0,lead:.58,fx:.34};
 
 let manifest=null;
 let running=false;
@@ -414,11 +415,15 @@ function desiredBusLevels(){
  const accel=smoothed.accel;
  const brake=smoothed.brake;
  const turn=smoothed.turn;
+ const pianoEnabled=ui.idlePiano.checked;
+ const pianoFade=pianoEnabled?1-smoothstep(26,34,speedKmh):0;
+ const harmonyBase=clamp(.70-.15*e,0,.70);
  return {
   rhythm:clamp(smoothstep(.10,.36,e)*(.90-brake*.72),0,.90),
   tops:clamp(Math.max(smoothstep(.27,.60,e)*.62,accel*.62,turn*.58),0,.68),
   bass:clamp(smoothstep(.12,.40,e)*.78,0,.78),
-  harmony:stopped&&ui.idlePiano.checked?.78:clamp(.72-.16*e,0,.72),
+  harmony:clamp(harmonyBase-(pianoFade*.18),.38,.70),
+  piano:clamp(.78*pianoFade,0,.78),
   lead:clamp(smoothstep(.40,.72,e)*.64,0,.64),
   fx:clamp(.07+accel*.42+brake*.36+(targetScene!==currentScene?.20:0),0,.42)
  };
@@ -449,7 +454,6 @@ function applyBusMix(force=false){
  BUSES.forEach(bus=>{
   const signal=Math.max(sceneSignal(currentScene,bus.id),pendingTransition?sceneSignal(pendingTransition.scene,bus.id):0);
   let level=desired[bus.id]*(signal?1:0);
-  if(!ui.idlePiano.checked&&speedKmh<4)level=0;
   scheduleBusLevel(bus,level,force);
   updateAgentVisual(bus.id,level);
  });
@@ -480,7 +484,7 @@ function updateDrivingMemory(){
 function evaluateScene(){
  if(fixedMixMode)return "chorus";
  if(smoothed.brake>.36)return "breakdown";
- if(speedKmh<4)return ui.idlePiano.checked?"intro":"groove";
+ if(speedKmh<4)return "intro";
  if(speedIntensity>.74&&longMemory>.45)return longMemory>.70?"finale":"chorus";
  if(smoothed.accel>.24||shortMemory>.54)return "drive";
  if(speedIntensity>.27||stableSpeedMemory>.34)return "groove";
@@ -545,7 +549,7 @@ function updateUi(){
  ui.arp.textContent=levels.lead>.46?"Présent":levels.lead>.08?"Discret":"Retiré";
  ui.filter.textContent=smoothed.brake>.18?"Fermé":"Ouvert";
  ui.variation.textContent=SCENE_LABELS[targetScene];
- ui.idle.textContent=ui.idlePiano.checked?"Ambiance active":"Silence à l’arrêt";
+ ui.idle.textContent=ui.idlePiano.checked?(speedKmh<=30?"Piano actif":"Piano hors plage"):"Piano désactivé";
 
  ui.motionX.textContent=rawMotion.x.toFixed(2);ui.motionY.textContent=rawMotion.y.toFixed(2);ui.motionZ.textContent=rawMotion.z.toFixed(2);
  ui.imuLong.textContent=imuLongitudinal.toFixed(2);ui.imuLat.textContent=imuLateral.toFixed(2);
@@ -804,7 +808,7 @@ function downloadSensorLog(){
  const blob=new Blob(["\ufeff"+lines.join("\n")],{type:"text/csv;charset=utf-8"});
  const url=URL.createObjectURL(blob);
  const link=document.createElement("a");
- link.href=url;link.download=`drivepulse-v8-1-sensors-${new Date().toISOString().replaceAll(":","-")}.csv`;
+ link.href=url;link.download=`drivepulse-v8-2-sensors-${new Date().toISOString().replaceAll(":","-")}.csv`;
  document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
@@ -832,9 +836,9 @@ async function start(){
 
   ui.start.disabled=true;ui.calibrate.disabled=!motionGranted;ui.stop.disabled=false;ui.demo.disabled=false;ui.journey.disabled=false;
   ui.quality.disabled=false;ui.record.disabled=false;ui.downloadLog.disabled=sensorLog.length===0;
-  setStatus(motionGranted?(sensorCalibration.calibrated?"V8.1 active : calibration 3D enregistrée.":"V8.1 active : effectue la calibration 3D."):"Audio actif. Capteurs Motion indisponibles.");
+  setStatus(motionGranted?(sensorCalibration.calibrated?"V8.2 active : calibration 3D enregistrée.":"V8.2 active : effectue la calibration 3D."):"Audio actif. Capteurs Motion indisponibles.");
   applyBusMix(true);updateEngine();
- }catch(error){console.error(error);setStatus(error.message||"Impossible de démarrer DrivePulse V8.1.");stop(false);}
+ }catch(error){console.error(error);setStatus(error.message||"Impossible de démarrer DrivePulse V8.2.");stop(false);}
 }
 
 function stop(updateStatus=true){
@@ -871,7 +875,7 @@ function openHelp(key){const item=HELP_CONTENT[key];if(!item)return;ui.helpTitle
 function closeHelp(){ui.helpModal.hidden=true;}
 function updateSettingValues(){ui.responsivenessValue.value=Number(ui.responsiveness.value).toFixed(1);ui.accelSensitivityValue.value=Number(ui.accelSensitivity.value).toFixed(2);ui.turnSensitivityValue.value=Number(ui.turnSensitivity.value).toFixed(2);}
 
-renderAgents();loadSavedCalibration();applyRoadMode(roadMode);updateSectionTimeline();updateSettingValues();updateCalibrationBadge();setStatus("Prêt — V8.1 qualité, faible latence et fusion 3D.");
+renderAgents();loadSavedCalibration();applyRoadMode(roadMode);updateSectionTimeline();updateSettingValues();updateCalibrationBadge();setStatus("Prêt — V8.2 avec piano adaptatif jusqu’à 30 km/h.");
 ui.start.addEventListener("click",start);ui.stop.addEventListener("click",()=>stop(true));ui.calibrate.addEventListener("click",beginCalibration);
 ui.demo.addEventListener("click",startDemo);ui.journey.addEventListener("click",startJourney);ui.quality.addEventListener("click",toggleFixedMix);
 ui.record.addEventListener("click",toggleLogging);ui.downloadLog.addEventListener("click",downloadSensorLog);
@@ -882,4 +886,4 @@ ui.closeHelp.addEventListener("click",closeHelp);ui.helpModal.addEventListener("
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeHelp();});
 [ui.responsiveness,ui.accelSensitivity,ui.turnSensitivity].forEach(input=>input.addEventListener("input",updateSettingValues));
 const savedIdle=localStorage.getItem("drivepulse-idle-music");if(savedIdle!==null)ui.idlePiano.checked=savedIdle==="1";
-if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=8.1"));
+if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js?v=8.2"));

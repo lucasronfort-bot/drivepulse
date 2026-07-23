@@ -5,12 +5,13 @@
   "bpm": 120,
   "bar_duration": 2,
   "loop_duration": 16,
-  "format": "AAC-LC 256 kb/s, 44.1 kHz, stereo",
+  "format": "AAC-LC 256 kb/s, 44.1 kHz, stereo; dedicated Rhodes piano loop",
   "buses": [
     "rhythm",
     "tops",
     "bass",
     "harmony",
+    "piano",
     "lead",
     "fx"
   ],
@@ -22,6 +23,7 @@
         "tops": "audio/kalte-ohren/intro/tops.m4a",
         "bass": "audio/kalte-ohren/intro/bass.m4a",
         "harmony": "audio/kalte-ohren/intro/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/intro/lead.m4a",
         "fx": "audio/kalte-ohren/intro/fx.m4a"
       }
@@ -33,6 +35,7 @@
         "tops": "audio/kalte-ohren/groove/tops.m4a",
         "bass": "audio/kalte-ohren/groove/bass.m4a",
         "harmony": "audio/kalte-ohren/groove/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/groove/lead.m4a",
         "fx": "audio/kalte-ohren/groove/fx.m4a"
       }
@@ -44,6 +47,7 @@
         "tops": "audio/kalte-ohren/drive/tops.m4a",
         "bass": "audio/kalte-ohren/drive/bass.m4a",
         "harmony": "audio/kalte-ohren/drive/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/drive/lead.m4a",
         "fx": "audio/kalte-ohren/drive/fx.m4a"
       }
@@ -55,6 +59,7 @@
         "tops": "audio/kalte-ohren/breakdown/tops.m4a",
         "bass": "audio/kalte-ohren/breakdown/bass.m4a",
         "harmony": "audio/kalte-ohren/breakdown/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/breakdown/lead.m4a",
         "fx": "audio/kalte-ohren/breakdown/fx.m4a"
       }
@@ -66,6 +71,7 @@
         "tops": "audio/kalte-ohren/chorus/tops.m4a",
         "bass": "audio/kalte-ohren/chorus/bass.m4a",
         "harmony": "audio/kalte-ohren/chorus/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/chorus/lead.m4a",
         "fx": "audio/kalte-ohren/chorus/fx.m4a"
       }
@@ -77,6 +83,7 @@
         "tops": "audio/kalte-ohren/finale/tops.m4a",
         "bass": "audio/kalte-ohren/finale/bass.m4a",
         "harmony": "audio/kalte-ohren/finale/harmony.m4a",
+        "piano": "audio/kalte-ohren/common/piano.m4a",
         "lead": "audio/kalte-ohren/finale/lead.m4a",
         "fx": "audio/kalte-ohren/finale/fx.m4a"
       }
@@ -89,6 +96,7 @@
       "B-Delay"
     ],
     "peak_ceiling_db": -6.0,
-    "master_note": "No per-stem loudness normalization; conservative bus gains preserve dynamics."
+    "master_note": "No per-stem loudness normalization; conservative bus gains preserve dynamics.",
+    "piano_note": "Dedicated Rhodes stem from bars starting at 96 s; active below 30 km/h with progressive fade."
   }
 }
